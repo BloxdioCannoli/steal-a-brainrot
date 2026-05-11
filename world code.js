@@ -1,10 +1,23 @@
-//update: a
+//update: aa
+
+/*
+TODO:
+
+- locking base
+- sidebar
+- stealing brainrots from other players
+- purchasing brainrots
+- persisting brainrots across sessions
+- selling brainrots
+- claiming what brainrots earned you
+*/
 
 let maxBaseNum = -1;
 let bases = {};
 let baseNum = {};
 basesConfig = [
-    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]] },
+    // specifiy base of laser mesh and then set invis solids 1 block above and use walkthroughrect on the player whoose base it is
+    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -998, -957] },
     { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]] },
     { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]] },
     { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]] },
@@ -37,12 +50,16 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
+    api.setMaxPlayers(8, 8);
     api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
 
     let username = api.getEntityName(myId);
-
     baseNum[myId] = maxBaseNum + 1;
     bases[myId] = basesConfig[maxBaseNum + 1];
+    let base = bases[myId];
+
+    let lsp = base.laserStartPos;
+    api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 2, lsp[2]], [lsp[0], lsp[1], lsp[2] - 1], 1);
 
     nametag = api.attemptCreateMeshEntity("BloxdBlock", {
         blockName: "Invisible Solid",
