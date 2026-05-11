@@ -108,6 +108,44 @@ let consec = 0; let wait = 0; function tick() {
                 texture: "lava0",
             });
             api.setPosition(mesh, meshPos);
+
+            let particles = api.attemptCreateMeshEntity("ParticleEmitter", {
+                dir1: [-0.5, 0, -0.5],
+                dir2: [0.5, 2.5, 0.5],
+
+                emitRate: 10,
+                texture: "square_particle",
+                minLifeTime: 1,
+                maxLifeTime: 1,
+                minEmitPower: 1,
+                maxEmitPower: 2,
+                minSize: 0.2,
+                maxSize: 0.2,
+                manualEmitCount: 20,
+                gravity: [0, -10, 0],
+                colorGradients: [
+                    {
+                        timeFraction: 0,
+                        minColor: [255, 0, 0, 1],
+                        maxColor: [255, 255, 0, 1],
+                    },
+                ],
+                velocityGradients: [
+                    {
+                        timeFraction: 0,
+                        factor: 1,
+                        factor2: 1,
+                    },
+                ],
+                blendMode: 1,
+
+                hideDist: 100,
+                height: 1,
+                width: 1,
+                depth: 1,
+            });
+            api.setPosition(particles, meshPos);
+
             hasspawnedmesh = true;
         }
         // world tick
