@@ -2,6 +2,7 @@
 
 let maxBaseNum = -1;
 let bases = {};
+let baseNum = {};
 basesConfig = [
     { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]] },
     { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]] },
@@ -18,9 +19,9 @@ basesConfig = [
 function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
 
 function onPlayerLeave(myId) {
-    let idx = bases.indexOf(myId);
-    maxBaseNum = idx - 1;
-    let borders = basesConfig[bases].borders;
+    let idx = baseNum[myId];
+    let borders = basesConfig[idx].borders;
+
     let [x1, y1, z1] = borders[0];
     let [x2, y2, z2] = borders[1];
 
@@ -31,6 +32,7 @@ function onPlayerLeave(myId) {
         }
     }
 
+    maxBaseNum = idx - 1;
     delete bases[myId];
 }
 
@@ -39,6 +41,7 @@ function onPlayerJoin(myId) {
 
     let username = api.getEntityName(myId);
 
+    baseNum[myId] = maxBaseNum + 1;
     bases[myId] = basesConfig[maxBaseNum + 1];
     maxBaseNum++;
 
