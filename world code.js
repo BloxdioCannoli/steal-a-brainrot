@@ -17,7 +17,7 @@ let bases = {};
 let baseNum = {};
 basesConfig = [
     // specifiy base of laser mesh and then set invis solids 1 block above and use walkthroughrect on the player whoose base it is
-    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -998, -957] },
+    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -999, -957], lockPos: [-1019, -996, -960] },
     { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]] },
     { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]] },
     { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]] },
@@ -28,8 +28,9 @@ basesConfig = [
     { nametagPos: [-984, -994, -1014], spawnPos: [-984, -998, -1014], borders: [[-984, -982, -991], [-973, -999, -979]] },
 ];
 
-
-function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
+function onPlayerAltAction(myId, x, y, z, block, targetEId) {
+    
+}
 
 function onPlayerLeave(myId) {
     let idx = baseNum[myId];
@@ -50,6 +51,7 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
+    api.setItemStat(myId, "Invisible Solid", "showInCreativeInven", true)
     api.setMaxPlayers(8, 8);
     api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
 
@@ -69,6 +71,8 @@ function onPlayerJoin(myId) {
 
     api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
     api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
+
+    createLockNotif(myId, base.lockPos);
 
     //api.setPosition(myId, bases[myId].spawnPos);
     maxBaseNum++;
@@ -336,7 +340,7 @@ function random(min, max) {
 
 function createLaser(x, y, z) {
     laser1 = api.attemptCreateMeshEntity("BloxdBlock", {
-        size: [0.5, 3, 0.5],
+        size: [0.5, 4, 0.5],
         blockName: "Red Concrete",
     }, "laser");
     api.setTargetedPlayerSettingForEveryone(laser1, "nameTagInfo", { content: [] });
@@ -350,4 +354,25 @@ function removeLaser(x, y, z) {
     }
 }
 
+function createLockNotif(myId, pos) {
+    let [x, y, z] = pos;
+
+    lockNotif = api.attemptCreateMeshEntity("BloxdBlock", {
+        size: [1, 1, 1],
+        blockName: "Invisible Solid",
+        hideDist: 5,
+    }, "laser");
+    api.setOtherEntitySetting(myId, lockNotif, "nameTagInfo", {
+        content: [
+            { str: "Lock Base", style: { fontSize: "150px" } }
+        ],
+        subtitle: [
+            { str: "Right-click on the Block of Iron to lock." }
+        ]
+    });
+    api.setPosition(lockNotif, [x + 0.5, y + 0, z + 0.5]);
+}
+
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
+
+function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
