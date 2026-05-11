@@ -1,4 +1,7 @@
-//update: aaa
+//update: aa
+
+brainrotSpawnPos = [-999, -999, -1025];
+brainrotDeathPos = [-999, -997, -942.5];
 
 /*
 TODO:
@@ -10,9 +13,17 @@ TODO:
 - persisting brainrots across sessions
 - selling brainrots
 - claiming what brainrots earned you
+
+BUGS:
+
+- when a player rejoins, their base appears on top of a base later in the array
+fix:
+
+1. We loop through bases and add the index of basesConfig to an array, inxes
+2. We loop through (i of idxes) and check if !([0, 1, 2, 3, 4, 5, 6, 7].includes(i)), and if so, we return i! That's the new base index.
 */
 
-let defLockTime=10;
+let defLockTime = 10;
 
 let lockedBases = {};
 let lockTime = {};
@@ -21,9 +32,9 @@ let maxBaseNum = -1;
 let bases = {};
 let baseNum = {};
 basesConfig = [
-    // specifiy base of laser mesh and then set invis solids 1 block above and use walkthroughrect on the player whoose base it is
+    // laserStart pos is at the bottom-right of the laser at a base
     { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -999, -957], lockPos: [-1019, -996, -960] },
-    { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]] },
+    { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]], laserStartPos: [-1018, -999, -976], lockPos: [-1019, -996, -979] },
     { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]] },
     { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]] },
 
@@ -177,10 +188,8 @@ let consec = 0; let wait = 0; function tick() {
         pId = players[pNum];
 
         if (lockedBases[pId]) {
-            if (lockedBases[pId] > 0) {
-              lockedBases[pId]--;
-            } else {
-                api.log("unlock base here")
+            if (lockedBases[pId] <= api.now()) {
+                setBaseLockedState(pId, "unlocked");
                 delete lockedBases[pId];
             }
         }
@@ -192,8 +201,11 @@ function onPlayerAltAction(myId, x, y, z, block, targetEId) {
 
     if (x == lx && y == ly && z == lz) {
         if (!lockedBases[myId]) {
-            lockedBases[myId] = lockTime[myId];
-            api.log("lock base here")
+            lockedBases[myId] = api.now() + (lockTime[myId] * 1000);
+            let base = bases[myId];
+
+            setBaseLockedState(myId, "locked");
+
             api.sendFlyingMiddleMessage(myId, [
                 { str: `Locked base.` },
             ], 10, 1000);
@@ -230,7 +242,7 @@ function onPlayerJoin(myId) {
 
     let username = api.getEntityName(myId);
     baseNum[myId] = maxBaseNum + 1;
-    bases[myId] = basesConfig[maxBaseNum + 1];
+    bases[myId] = { ...basesConfig[maxBaseNum + 1] }; bases[myId].idx = maxBaseNum;
     let base = bases[myId];
 
     let lsp = base.laserStartPos;
@@ -242,7 +254,7 @@ function onPlayerJoin(myId) {
     }, `${username}'s Base`);
     api.setPosition(nametag, bases[myId].nametagPos);
 
-    lockTime[myId] = (defLockTime) * 1000;
+    lockTime[myId] = defLockTime;
 
     api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
     api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
@@ -255,6 +267,7 @@ function onPlayerJoin(myId) {
 
 function onWorldAttemptDespawnMob(mobId) {
     for (let m of mobs) {
+        api.log(`${m.id} == ${mobId}`);
         if (m.id == mobId) { return "preventDespawn"; }
     }
 }
@@ -317,9 +330,6 @@ brainrots = [
     },
 ];
 
-brainrotSpawnPos = [-999, -999, -1025];
-brainrotDeathPos = [-999, -997, -942];
-
 let spawnFreq = 23;
 
 const maxConsec = 5;
@@ -372,7 +382,7 @@ function random(min, max) {
 
 function createLaser(x, y, z) {
     laser1 = api.attemptCreateMeshEntity("BloxdBlock", {
-        size: [0.5, 4, 0.5],
+        size: [0.5, 5, 0.5],
         blockName: "Red Concrete",
     }, "laser");
     api.setTargetedPlayerSettingForEveryone(laser1, "nameTagInfo", { content: [] });
@@ -380,7 +390,7 @@ function createLaser(x, y, z) {
 }
 
 function removeLaser(x, y, z) {
-    for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
+    for (let e of api.getEntitiesInRect([x - 1, y - 1, z - 1], [x + 1, y + 1, z + 1])) {
         let type = api.getEntityType(e);
         if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
     }
@@ -393,7 +403,7 @@ function createLockNotif(myId, pos) {
         size: [1, 1, 1],
         blockName: "Invisible Solid",
         hideDist: 5,
-    }, "laser");
+    });
     api.setOtherEntitySetting(myId, lockNotif, "nameTagInfo", {
         content: [
             { str: "Lock Base", style: { fontSize: "150px" } }
@@ -405,6 +415,37 @@ function createLockNotif(myId, pos) {
     api.setPosition(lockNotif, [x + 0.5, y + 0, z + 0.5]);
 }
 
+function setBaseLockedState(myId, type = "locked") {
+    let base = bases[myId];
+    let [lx, ly, lz] = base.laserStartPos;
+
+    if (type == "locked") {
+        api.setBlockRect([lx, ly + 2, lz - 1], [lx, ly + 2, lz], "Invisible Solid");
+        createLaser(lx, ly - 2, lz);
+        createLaser(lx, ly - 2, lz - 1);
+    } else if (type == "unlocked") {
+        api.setBlockRect([lx, ly + 2, lz - 1], [lx, ly + 2, lz], "Air");
+        removeLaser(lx, ly - 2, lz);
+        removeLaser(lx, ly - 2, lz - 1);
+    }
+}
+
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
 
 function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
+
+function getFreeBase() {
+    let indexes = [];
+
+    for (let id in bases) {
+        indexes.push(bases[id].idx);
+    }
+
+    let numbers = [0, 1, 2, 3, 4, 5, 6, 7];
+    for (let num of numbers) {
+        if (!indexes.includes(num)) {
+           return num;
+        }
+    }
+    return false;
+}
