@@ -1,9 +1,39 @@
-//update: aaa
+//update: a
+
+let maxBaseNum = -1;
+let bases = {};
+basesConfig = [
+    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957] },
+    { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976] },
+    { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995] },
+    { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014] },
+
+    { nametagPos: [-984, -994, -957], spawnPos: [-984, -998, -957] },
+    { nametagPos: [-984, -994, -976], spawnPos: [-984, -998, -976] },
+    { nametagPos: [-984, -994, -995], spawnPos: [-984, -998, -995] },
+    { nametagPos: [-984, -994, -1014], spawnPos: [-984, -998, -1014] },
+];
+
 
 function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
 
 function onPlayerJoin(myId) {
     api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
+
+    let username = api.getEntityName(myId);
+
+    bases[myId] = basesConfig[maxBaseNum + 1];
+    maxBaseNum++;
+
+    nametag = api.attemptCreateMeshEntity("BloxdBlock", {
+        blockName: "Invisible Solid",
+        size: 1,
+    }, `${username}'s Base`);
+    api.setPosition(nametag, bases[myId].nametagPos);
+
+    api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
+
+    //api.setPosition(myId, bases[myId].spawnPos);
 }
 
 function onWorldAttemptDespawnMob() {
