@@ -32,7 +32,7 @@ function onPlayerLeave(myId) {
         }
     }
 
-    maxBaseNum = idx - 1;
+    maxBaseNum = idx - 2;
     delete bases[myId];
 }
 
@@ -43,7 +43,6 @@ function onPlayerJoin(myId) {
 
     baseNum[myId] = maxBaseNum + 1;
     bases[myId] = basesConfig[maxBaseNum + 1];
-    maxBaseNum++;
 
     nametag = api.attemptCreateMeshEntity("BloxdBlock", {
         blockName: "Invisible Solid",
@@ -54,7 +53,8 @@ function onPlayerJoin(myId) {
     api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
     api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
 
-    //api.setPosition(myId, bases[myId].spawnPos);
+    api.setPosition(myId, bases[myId].spawnPos);
+    maxBaseNum++;
 }
 
 function onWorldAttemptDespawnMob(mobId) {
