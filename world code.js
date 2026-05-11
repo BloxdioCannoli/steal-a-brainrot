@@ -243,6 +243,12 @@ function onPlayerJoin(myId) {
     let lsp = base.laserStartPos;
     api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
 
+    let otherLasers = base.otherLasers;
+    for (let laser of otherLasers) {
+        let [olx, oy, oz] = laser;
+        api.setWalkThroughRect(myId, [olx, oy + 1, oz], [olx, oy + 3, oz], 1);
+    }
+
     nametag = api.attemptCreateMeshEntity("BloxdBlock", {
         blockName: "Invisible Solid",
         size: 1,
@@ -412,12 +418,11 @@ function createLockNotif(myId, pos) {
 function setBaseLockedState(myId, type = "locked") {
     let base = bases[myId];
 
-    api.log(base.laserStartPos);
     let [lx, ly, lz] = base.laserStartPos;
     let otherLasers = base.otherLasers;
 
     if (type == "locked") {
-        api.setBlockRect([lx, ly + 2, lz - 1], [lx, ly + 2, lz], "Invisible Solid");
+        api.setBlockRect([lx, ly + 1, lz - 1], [lx, ly + 3, lz], "Invisible Solid");
         createLaser(lx, ly - 2, lz);
         createLaser(lx, ly - 2, lz - 1);
 
@@ -425,10 +430,10 @@ function setBaseLockedState(myId, type = "locked") {
             let [olx, oy, oz] = laser;
 
             createLaser(olx, oy, oz, 3);
-            api.setBlock([olx, oy + 2, oz], "Invisible Solid");
+            api.setBlockRect([olx, oy + 1, oz], [olx, oy + 3, oz], "Invisible Solid");
         }
     } else if (type == "unlocked") {
-        api.setBlockRect([lx, ly + 2, lz - 1], [lx, ly + 2, lz], "Air");
+        api.setBlockRect([lx, ly + 1, lz - 1], [lx, ly + 3, lz], "Air");
         removeLaser(lx, ly - 2, lz);
         removeLaser(lx, ly - 2, lz - 1);
 
@@ -436,7 +441,7 @@ function setBaseLockedState(myId, type = "locked") {
             let [olx, oy, oz] = laser;
 
             removeLaser(olx, oy, oz);
-            api.setBlock([olx, oy + 2, oz], "Air");
+            api.setBlockRect([olx, oy + 1, oz], [olx, oy + 3, oz], "Air");
         }
     }
 };
