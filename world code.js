@@ -1,6 +1,14 @@
-//update: aa
+//update: aaa
 
 function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
+
+function onPlayerJoin(myId) {
+    api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
+}
+
+function onWorldAttemptDespawnMob() {
+    return (mobs.includes(mobId) ? "preventDespawn" : true);
+}
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     if (isCannoli(myId)) {
@@ -12,43 +20,51 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 let defSize = 2;
 let defOffset = [0, 0.85, 0];
 
+rarityColors = {
+    "Common": "#fffaf7",
+    "Uncommon": "#41fc03",
+    "Rare": "#0390fc",
+    "Legendary": "#e8d631",
+    "Mythical": "#5531e8",
+};
+
 brainrots = [
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset },
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
         ], name: "Common", chance: 1
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset },
+            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
         ], name: "Uncommon", chance: 0.5
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset },
+            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
         ], name: "Rare", chance: 0.25
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset },
-            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset },
+            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
         ], name: "Legendary", chance: 0.1
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset },
-        ], name: "Secret", chance: 0.05
+            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+        ], name: "Mythical", chance: 0.05
     },
 ];
 
@@ -131,7 +147,11 @@ let consec = 0; let wait = 0; function tick() {
                         if (mesh) {
                             api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
                                 content: [
-                                    { str: `${brainrotData.blockName}` }
+                                    { str: `${brainrotData.blockName.replace(" Statue", "")}`, style: { fontSize: "85px", color: rarityColors[rarity.name] } }
+                                ], backgroundColor: "rgba(0,0,0,0)",
+
+                                subtitle: [
+                                    { str: `${rarity.name}   Cost: ${brainrotData.data.cost}   Coins per Second: ${brainrotData.data.cps}` }
                                 ]
                             });
                             mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5, offset: brainrotData.offset });
