@@ -1,7 +1,7 @@
-function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
+//update: a 
 
-brainrotSpawnPos = [-999, -998.5, -1025];
-brainrtoDeathPos = [-998, -996.5, -940];
+brainrotSpawnPos = [-999, -999, -1025];
+brainrtoDeathPos = [-999, -997, -942];
 
 let spawnFreq = 23;
 
@@ -15,23 +15,26 @@ let pNum = 0;
 
 let startWorldTickAt = 20;
 
-let mobs = [];
+mobs = [];
+let players;
 
 let consec = 0; let wait = 0; function tick() {
     if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
 
-    let players = api.getPlayerIds();
-    if (!pNum) { pNum = 0; }; pNum = (pNum + 1) % players.length + 1;
+    players = api.getPlayerIds();
+    if (!pNum) { pNum = 0; };
+    pNum = (pNum + 1) % (players.length + 1);
     tickNum++;
 
     if (pNum == players.length) {
         // world tick
         if (tickNum >= startWorldTickAt) {
-            if (tickNum % spawnFreq == 1) {
+            if (tickNum % (spawnFreq) == 1) {
                 let mob = api.attemptSpawnMob("67", ...brainrotSpawnPos);
 
                 if (mob) {
                     api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
+
                     mobs.push(mob);
                 }
             }
@@ -40,7 +43,7 @@ let consec = 0; let wait = 0; function tick() {
                 let m = mobs[mNum];
                 let [x, y, z] = api.getPosition(m);
 
-                if (z <= brainrtoDeathPos[1]) {
+                if (z >= brainrtoDeathPos[2]) {
                     api.despawnMob(m);
                     mobs.splice(m, 1);
                 }
@@ -52,6 +55,16 @@ let consec = 0; let wait = 0; function tick() {
     }
 }
 
-for (let e of api.getMobIds()) {
-    api.despawnMob(e);
-}
+function clearAll() {
+    mobs = [];
+
+    for (let e of api.getMobIds()) {
+        api.despawnMob(e);
+    }
+    for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
+        let type = api.getEntityType(e);
+        if (type == "Mesh") { api.deleteMeshEntity(e); }
+    }
+}; clearAll();
+
+function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
