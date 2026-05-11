@@ -1,4 +1,4 @@
-//update: aa
+//update: aaaaa
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
@@ -6,7 +6,7 @@ brainrotDeathPos = [-999, -997, -942.5];
 /*
 TODO:
 
-- locking base
+- locking base [ADDING]
 - sidebar
 - stealing brainrots from other players
 - purchasing brainrots
@@ -16,11 +16,7 @@ TODO:
 
 BUGS:
 
-- when a player rejoins, their base appears on top of a base later in the array
-fix:
-
-1. We loop through bases and add the index of basesConfig to an array, inxes
-2. We loop through (i of idxes) and check if !([0, 1, 2, 3, 4, 5, 6, 7].includes(i)), and if so, we return i! That's the new base index.
+- mobs sometimes mysteriously despawn (use fallback values?)
 */
 
 let defLockTime = 10;
@@ -28,20 +24,19 @@ let defLockTime = 10;
 let lockedBases = {};
 let lockTime = {};
 
-let maxBaseNum = -1;
-let bases = {};
+bases = {};
 let baseNum = {};
 basesConfig = [
     // laserStart pos is at the bottom-right of the laser at a base
-    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -999, -957], lockPos: [-1019, -996, -960] },
+    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -999, -957], otherLasers: [[-1027, -990, -952], [-1028, -990, -952]], lockPos: [-1019, -996, -960] },
     { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]], laserStartPos: [-1018, -999, -976], lockPos: [-1019, -996, -979] },
-    { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]] },
-    { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]] },
+    { nametagPos: [-1018, -994, -994], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]], laserStartPos: [-1018, -999, -994], lockPos: [-1019, -996, -997] },
+    { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]], laserStartPos: [-1018, -999, -1013], lockPos: [-1019, -996, -1017] },
 
-    { nametagPos: [-984, -994, -957], spawnPos: [-984, -998, -957], borders: [[-984, -982, -952], [-973, -999, -940]] },
-    { nametagPos: [-984, -994, -976], spawnPos: [-984, -998, -976], borders: [[-984, -982, -965], [-973, -999, -953]] },
-    { nametagPos: [-984, -994, -995], spawnPos: [-984, -998, -995], borders: [[-984, -982, -978], [-973, -999, -966]] },
-    { nametagPos: [-984, -994, -1014], spawnPos: [-984, -998, -1014], borders: [[-984, -982, -991], [-973, -999, -979]] },
+    { nametagPos: [-984, -994, -957], spawnPos: [-984, -998, -957], borders: [[-984, -982, -952], [-973, -999, -940]], laserStartPos: [], lockPos: [] },
+    { nametagPos: [-984, -994, -976], spawnPos: [-984, -998, -976], borders: [[-984, -982, -965], [-973, -999, -953]], laserStartPos: [], lockPos: [] },
+    { nametagPos: [-984, -994, -995], spawnPos: [-984, -998, -995], borders: [[-984, -982, -978], [-973, -999, -966]], laserStartPos: [], lockPos: [] },
+    { nametagPos: [-984, -994, -1014], spawnPos: [-984, -998, -1014], borders: [[-984, -982, -991], [-973, -999, -979]], laserStartPos: [], lockPos: [] },
 ];
 
 let consec = 0; let wait = 0; function tick() {
@@ -231,7 +226,6 @@ function onPlayerLeave(myId) {
         }
     }
 
-    maxBaseNum = idx - 2;
     delete bases[myId];
 }
 
@@ -241,8 +235,9 @@ function onPlayerJoin(myId) {
     api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
 
     let username = api.getEntityName(myId);
-    baseNum[myId] = maxBaseNum + 1;
-    bases[myId] = { ...basesConfig[maxBaseNum + 1] }; bases[myId].idx = maxBaseNum;
+    let freeBaseIdx = getFreeBase();
+    baseNum[myId] = freeBaseIdx;
+    bases[myId] = { ...basesConfig[freeBaseIdx] }; bases[myId].idx = freeBaseIdx;
     let base = bases[myId];
 
     let lsp = base.laserStartPos;
@@ -262,12 +257,11 @@ function onPlayerJoin(myId) {
     createLockNotif(myId, base.lockPos);
 
     //api.setPosition(myId, bases[myId].spawnPos);
-    maxBaseNum++;
 }
 
 function onWorldAttemptDespawnMob(mobId) {
     for (let m of mobs) {
-        api.log(`${m.id} == ${mobId}`);
+        //api.log(`${m.id} == ${mobId}`);
         if (m.id == mobId) { return "preventDespawn"; }
     }
 }
@@ -380,9 +374,9 @@ function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function createLaser(x, y, z) {
+function createLaser(x, y, z, height = 5) {
     laser1 = api.attemptCreateMeshEntity("BloxdBlock", {
-        size: [0.5, 5, 0.5],
+        size: [0.5, height, 0.5],
         blockName: "Red Concrete",
     }, "laser");
     api.setTargetedPlayerSettingForEveryone(laser1, "nameTagInfo", { content: [] });
@@ -417,18 +411,35 @@ function createLockNotif(myId, pos) {
 
 function setBaseLockedState(myId, type = "locked") {
     let base = bases[myId];
+
+    api.log(base.laserStartPos);
     let [lx, ly, lz] = base.laserStartPos;
+    let otherLasers = base.otherLasers;
 
     if (type == "locked") {
         api.setBlockRect([lx, ly + 2, lz - 1], [lx, ly + 2, lz], "Invisible Solid");
         createLaser(lx, ly - 2, lz);
         createLaser(lx, ly - 2, lz - 1);
+
+        for (let laser of otherLasers) {
+            let [olx, oy, oz] = laser;
+
+            createLaser(olx, oy, oz, 3);
+            api.setBlock([olx, oy + 2, oz], "Invisible Solid");
+        }
     } else if (type == "unlocked") {
         api.setBlockRect([lx, ly + 2, lz - 1], [lx, ly + 2, lz], "Air");
         removeLaser(lx, ly - 2, lz);
         removeLaser(lx, ly - 2, lz - 1);
+
+        for (let laser of otherLasers) {
+            let [olx, oy, oz] = laser;
+
+            removeLaser(olx, oy, oz);
+            api.setBlock([olx, oy + 2, oz], "Air");
+        }
     }
-}
+};
 
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
 
@@ -444,7 +455,7 @@ function getFreeBase() {
     let numbers = [0, 1, 2, 3, 4, 5, 6, 7];
     for (let num of numbers) {
         if (!indexes.includes(num)) {
-           return num;
+            return num;
         }
     }
     return false;
