@@ -1,4 +1,4 @@
-//update: a 
+//update: aa
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrtoDeathPos = [-999, -997, -942];
@@ -18,6 +18,8 @@ let startWorldTickAt = 20;
 mobs = [];
 let players;
 
+let hasspawnedmesh = false;
+
 let consec = 0; let wait = 0; function tick() {
     if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
 
@@ -27,6 +29,19 @@ let consec = 0; let wait = 0; function tick() {
     tickNum++;
 
     if (pNum == players.length) {
+        if (!hasspawnedmesh) {
+            let meshPos = [-999, -1000, -941];
+
+            let mesh = api.attemptCreateMeshEntity("Box", {
+                height: 1,
+                width: 2,
+                depth: 2,
+
+                texture: "lava0",
+            });
+            api.setPosition(mesh, meshPos);
+            hasspawnedmesh = true;
+        }
         // world tick
         if (tickNum >= startWorldTickAt) {
             if (tickNum % (spawnFreq) == 1) {
@@ -35,17 +50,23 @@ let consec = 0; let wait = 0; function tick() {
                 if (mob) {
                     api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
 
-                    mobs.push(mob);
+                    mobs.push({ id: mob, type: "mob" });
                 }
             }
 
             for (let mNum in mobs) {
-                let m = mobs[mNum];
+                let m = mobs[mNum].id;
+                let type = mobs[mNum].type;
+
                 let [x, y, z] = api.getPosition(m);
 
-                if (z >= brainrtoDeathPos[2]) {
-                    api.despawnMob(m);
-                    mobs.splice(m, 1);
+                if (type == "mob") {
+
+                    if (z >= brainrtoDeathPos[2]) {
+                        api.despawnMob(m);
+                        mobs.splice(m, 1);
+                    }
+
                 }
             }
         }
