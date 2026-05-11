@@ -1,44 +1,44 @@
 //update: a
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    api.log('damaged');
+    log('damaged');
     return "preventDamage";
 }
 
 brainrots = [
     {
         ents: [
-
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: 1, offset: [0, 0, 0] }
         ], name: "Common", chance: 1
     },
 
     {
         ents: [
-
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: 1, offset: [0, 0, 0] }
         ], name: "Uncommon", chance: 0.5
     },
 
     {
         ents: [
-
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: 1, offset: [0, 0, 0] }
         ], name: "Rare", chance: 0.25
     },
 
     {
         ents: [
-
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: 1, offset: [0, 0, 0] }
         ], name: "Legendary", chance: 0.1
     },
 
     {
         ents: [
-
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: 1, offset: [0, 0, 0] }
         ], name: "Secret", chance: 0.05
     },
 ];
 
 brainrotSpawnPos = [-999, -999, -1025];
-brainrtoDeathPos = [-999, -997, -942];
+brainrotDeathPos = [-999, -997, -942];
 
 let spawnFreq = 23;
 
@@ -89,54 +89,61 @@ let consec = 0; let wait = 0; function tick() {
                     let mob = api.attemptSpawnMob("67", ...brainrotSpawnPos);
 
                     if (mob) {
-                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
+                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
 
                         mobs.push({ id: mob, type: usedType });
                     }
                 } else if (usedType == "mesh") {
+                    let rarity = randomRarity();
                     let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
 
-                    if (mob) {
-                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
+                    let brainrotPool = brainrots[rarity.idx].ents;
+                    let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
 
-                        let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
-                            size: 2.5,
+                    if (mob) {
+                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
+                        //log(brainrotData)
+
+                        let mesh = api.attemptCreateMeshEntity(brainrotData.meshType, {
+                            size: brainrotData.size,
                             autoRotate: true,
 
-                            blockName: "67 Statue",
+                            blockName: brainrotData.blockName,
                         });
+                        //log(mesh)
                         api.setPosition(mesh, x, y, z);
 
                         api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
 
                         if (mesh) {
-                            mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5 });
+                            mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5, offset: brainrotData.offset });
                         }
                     }
                 }
             }
 
             for (let mNum in mobs) {
+                let mob = mobs[mNum];
                 let m = mobs[mNum].id;
                 let type = mobs[mNum].type;
 
                 let [x, y, z] = api.getPosition(m);
 
                 if (type == "mob") {
-                    if (z >= brainrtoDeathPos[2]) {
+                    if (z >= brainrotDeathPos[2]) {
                         api.despawnMob(m);
                         mobs.splice(m, 1);
                     }
 
                 } else if (type == "mesh") {
                     let mesh = mobs[mNum].mesh;
-                    api.setPosition(mesh, [x, y - 1.1, z]);
+                    api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                     if (mobs[mNum].invisibleCount > 0) {
                         api.applyEffect(m, "Invisible", null, {});
                         mobs[mNum].invisibleCount--;
                     }
 
-                    if (z >= brainrtoDeathPos[2]) {
+                    if (z >= brainrotDeathPos[2]) {
                         api.despawnMob(m);
                         api.deleteMeshEntity(mesh);
                         mobs.splice(m, 1);
@@ -177,6 +184,10 @@ function randomRarity() {
     }
 
     return { idx: brainrots.indexOf(lowest), name: lowest.name, chance: lowest.chance };;
+}
+
+function random(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
