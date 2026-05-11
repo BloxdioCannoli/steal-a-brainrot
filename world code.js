@@ -12,6 +12,11 @@ TODO:
 - claiming what brainrots earned you
 */
 
+let defLockTime=10;
+
+let lockedBases = {};
+let lockTime = {};
+
 let maxBaseNum = -1;
 let bases = {};
 let baseNum = {};
@@ -27,138 +32,6 @@ basesConfig = [
     { nametagPos: [-984, -994, -995], spawnPos: [-984, -998, -995], borders: [[-984, -982, -978], [-973, -999, -966]] },
     { nametagPos: [-984, -994, -1014], spawnPos: [-984, -998, -1014], borders: [[-984, -982, -991], [-973, -999, -979]] },
 ];
-
-function onPlayerAltAction(myId, x, y, z, block, targetEId) {
-    
-}
-
-function onPlayerLeave(myId) {
-    let idx = baseNum[myId];
-    let borders = basesConfig[idx].borders;
-
-    let [x1, y1, z1] = borders[0];
-    let [x2, y2, z2] = borders[1];
-
-    for (let e of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
-        let type = api.getEntityType(e);
-        if (type == "Mesh") {
-            api.deleteMeshEntity(e);
-        }
-    }
-
-    maxBaseNum = idx - 2;
-    delete bases[myId];
-}
-
-function onPlayerJoin(myId) {
-    api.setItemStat(myId, "Invisible Solid", "showInCreativeInven", true)
-    api.setMaxPlayers(8, 8);
-    api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
-
-    let username = api.getEntityName(myId);
-    baseNum[myId] = maxBaseNum + 1;
-    bases[myId] = basesConfig[maxBaseNum + 1];
-    let base = bases[myId];
-
-    let lsp = base.laserStartPos;
-    api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 2, lsp[2]], [lsp[0], lsp[1], lsp[2] - 1], 1);
-
-    nametag = api.attemptCreateMeshEntity("BloxdBlock", {
-        blockName: "Invisible Solid",
-        size: 1,
-    }, `${username}'s Base`);
-    api.setPosition(nametag, bases[myId].nametagPos);
-
-    api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
-    api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
-
-    createLockNotif(myId, base.lockPos);
-
-    //api.setPosition(myId, bases[myId].spawnPos);
-    maxBaseNum++;
-}
-
-function onWorldAttemptDespawnMob(mobId) {
-    return (mobs.includes(mobId) ? "preventDespawn" : true);
-}
-
-function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    if (isCannoli(myId)) {
-        log('damaged');
-    }
-    return "preventDamage";
-}
-
-let defSize = 2;
-let defOffset = [0, 0.85, 0];
-
-rarityColors = {
-    "Common": "#fffaf7",
-    "Uncommon": "#41fc03",
-    "Rare": "#0390fc",
-    "Legendary": "#e8d631",
-    "Mythical": "#5531e8",
-};
-
-brainrots = [
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Common", chance: 1
-    },
-
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Uncommon", chance: 0.5
-    },
-
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Rare", chance: 0.25
-    },
-
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Legendary", chance: 0.1
-    },
-
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Mythical", chance: 0.05
-    },
-];
-
-brainrotSpawnPos = [-999, -999, -1025];
-brainrotDeathPos = [-999, -997, -942];
-
-let spawnFreq = 23;
-
-const maxConsec = 5;
-const waitNum = 5;
-
-tickNum = 0;
-
-let pId = 0;
-let pNum = 0;
-
-let startWorldTickAt = 0;//20;
-
-mobs = [];
-let players;
-
-let hasspawnedmesh = false;
 
 let consec = 0; let wait = 0; function tick() {
     if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
@@ -302,8 +175,167 @@ let consec = 0; let wait = 0; function tick() {
     } else {
         // player tick
         pId = players[pNum];
+
+        if (lockedBases[pId]) {
+            if (lockedBases[pId] > 0) {
+              lockedBases[pId]--;
+            } else {
+                api.log("unlock base here")
+                delete lockedBases[pId];
+            }
+        }
     }
 }
+
+function onPlayerAltAction(myId, x, y, z, block, targetEId) {
+    let [lx, ly, lz] = bases[myId].lockPos;
+
+    if (x == lx && y == ly && z == lz) {
+        if (!lockedBases[myId]) {
+            lockedBases[myId] = lockTime[myId];
+            api.log("lock base here")
+            api.sendFlyingMiddleMessage(myId, [
+                { str: `Locked base.` },
+            ], 10, 1000);
+        } else {
+            api.sendFlyingMiddleMessage(myId, [
+                { str: `Your base is already locked!` },
+            ], 10, 1000);
+        }
+    }
+}
+
+function onPlayerLeave(myId) {
+    let idx = baseNum[myId];
+    let borders = basesConfig[idx].borders;
+
+    let [x1, y1, z1] = borders[0];
+    let [x2, y2, z2] = borders[1];
+
+    for (let e of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
+        let type = api.getEntityType(e);
+        if (type == "Mesh") {
+            api.deleteMeshEntity(e);
+        }
+    }
+
+    maxBaseNum = idx - 2;
+    delete bases[myId];
+}
+
+function onPlayerJoin(myId) {
+    api.setItemStat(myId, "Invisible Solid", "showInCreativeInven", true);
+    api.setMaxPlayers(8, 8);
+    api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
+
+    let username = api.getEntityName(myId);
+    baseNum[myId] = maxBaseNum + 1;
+    bases[myId] = basesConfig[maxBaseNum + 1];
+    let base = bases[myId];
+
+    let lsp = base.laserStartPos;
+    api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
+
+    nametag = api.attemptCreateMeshEntity("BloxdBlock", {
+        blockName: "Invisible Solid",
+        size: 1,
+    }, `${username}'s Base`);
+    api.setPosition(nametag, bases[myId].nametagPos);
+
+    lockTime[myId] = (defLockTime) * 1000;
+
+    api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
+    api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
+
+    createLockNotif(myId, base.lockPos);
+
+    //api.setPosition(myId, bases[myId].spawnPos);
+    maxBaseNum++;
+}
+
+function onWorldAttemptDespawnMob(mobId) {
+    for (let m of mobs) {
+        if (m.id == mobId) { return "preventDespawn"; }
+    }
+}
+
+function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    if (isCannoli(myId)) {
+        log('damaged');
+    }
+    return "preventDamage";
+}
+
+let defSize = 2;
+let defOffset = [0, 0.85, 0];
+
+rarityColors = {
+    "Common": "#fffaf7",
+    "Uncommon": "#41fc03",
+    "Rare": "#0390fc",
+    "Legendary": "#e8d631",
+    "Mythical": "#5531e8",
+};
+
+brainrots = [
+    {
+        ents: [
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+        ], name: "Common", chance: 1
+    },
+
+    {
+        ents: [
+            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+        ], name: "Uncommon", chance: 0.5
+    },
+
+    {
+        ents: [
+            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+        ], name: "Rare", chance: 0.25
+    },
+
+    {
+        ents: [
+            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+        ], name: "Legendary", chance: 0.1
+    },
+
+    {
+        ents: [
+            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+        ], name: "Mythical", chance: 0.05
+    },
+];
+
+brainrotSpawnPos = [-999, -999, -1025];
+brainrotDeathPos = [-999, -997, -942];
+
+let spawnFreq = 23;
+
+const maxConsec = 5;
+const waitNum = 5;
+
+tickNum = 0;
+
+let pId = 0;
+let pNum = 0;
+
+let startWorldTickAt = 0;//20;
+
+mobs = [];
+let players;
+
+let hasspawnedmesh = false;
 
 function clearAll() {
     mobs = [];
