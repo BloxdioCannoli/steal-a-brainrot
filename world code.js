@@ -1,4 +1,4 @@
-//update: aa
+//update: aaa
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrtoDeathPos = [-999, -997, -942];
@@ -13,7 +13,7 @@ tickNum = 0;
 let pId = 0;
 let pNum = 0;
 
-let startWorldTickAt = 20;
+let startWorldTickAt = 0;//20;
 
 mobs = [];
 let players;
@@ -45,12 +45,38 @@ let consec = 0; let wait = 0; function tick() {
         // world tick
         if (tickNum >= startWorldTickAt) {
             if (tickNum % (spawnFreq) == 1) {
-                let mob = api.attemptSpawnMob("67", ...brainrotSpawnPos);
+                let [x, y, z] = brainrotSpawnPos;
+                let usedType = "mesh";
 
-                if (mob) {
-                    api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
+                if (usedType == "mob") {
+                    let mob = api.attemptSpawnMob("67", ...brainrotSpawnPos);
 
-                    mobs.push({ id: mob, type: "mob" });
+                    if (mob) {
+                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
+
+                        mobs.push({ id: mob, type: usedType });
+                    }
+                } else if (usedType == "mesh") {
+                    let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+
+                    if (mob) {
+                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
+
+                        let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
+                            size: 2,
+                            autoRotate: true,
+
+                            blockName: "67 Statue",
+                        });
+                        api.setPosition(mesh, x, y, z);
+
+                        api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
+                        api.setTargetedPlayerSettingForEveryone(mob, "canSee", false);
+
+                        if (mesh) {
+                            mobs.push({ id: mob, mesh: mesh, type: usedType });
+                        }
+                    }
                 }
             }
 
@@ -61,12 +87,20 @@ let consec = 0; let wait = 0; function tick() {
                 let [x, y, z] = api.getPosition(m);
 
                 if (type == "mob") {
-
                     if (z >= brainrtoDeathPos[2]) {
                         api.despawnMob(m);
                         mobs.splice(m, 1);
                     }
 
+                } else if (type == "mesh") {
+                    let mesh = mobs[mNum].mesh;
+                    api.setPosition(mesh, [x, y - 0.85, z]);
+
+                    if (z >= brainrtoDeathPos[2]) {
+                        api.despawnMob(m);
+                        api.deleteMeshEntity(mesh);
+                        mobs.splice(m, 1);
+                    }
                 }
             }
         }
