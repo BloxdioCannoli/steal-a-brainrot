@@ -5,6 +5,38 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     return "preventDamage";
 }
 
+brainrots = [
+    {
+        ents: [
+
+        ], name: "Common", chance: 1
+    },
+
+    {
+        ents: [
+
+        ], name: "Uncommon", chance: 0.5
+    },
+
+    {
+        ents: [
+
+        ], name: "Rare", chance: 0.25
+    },
+
+    {
+        ents: [
+
+        ], name: "Legendary", chance: 0.1
+    },
+
+    {
+        ents: [
+
+        ], name: "Secret", chance: 0.05
+    },
+];
+
 brainrotSpawnPos = [-999, -999, -1025];
 brainrtoDeathPos = [-999, -997, -942];
 
@@ -129,5 +161,22 @@ function clearAll() {
         if (type == "Mesh") { api.deleteMeshEntity(e); }
     }
 }; clearAll();
+
+function randomRarity() {
+    const _random = () => (Math.random());
+    const r = _random();
+
+    let lowest = brainrots[0];
+    for (let bNum in brainrots) {
+        let b = brainrots[bNum];
+
+        let chance = b.chance;
+        if (r <= chance) {
+            lowest = b;
+        }
+    }
+
+    return { idx: brainrots.indexOf(lowest), name: lowest.name, chance: lowest.chance };;
+}
 
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
