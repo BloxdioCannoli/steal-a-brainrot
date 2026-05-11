@@ -1,4 +1,9 @@
-//update: aaa
+//update: a
+
+function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    api.log('damaged');
+    return "preventDamage";
+}
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrtoDeathPos = [-999, -997, -942];
@@ -63,7 +68,7 @@ let consec = 0; let wait = 0; function tick() {
                         api.setMobAiState(mob, "walkingToPosition", { pos: brainrtoDeathPos });
 
                         let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
-                            size: 2,
+                            size: 2.5,
                             autoRotate: true,
 
                             blockName: "67 Statue",
@@ -71,10 +76,9 @@ let consec = 0; let wait = 0; function tick() {
                         api.setPosition(mesh, x, y, z);
 
                         api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
-                        api.setTargetedPlayerSettingForEveryone(mob, "canSee", false);
 
                         if (mesh) {
-                            mobs.push({ id: mob, mesh: mesh, type: usedType });
+                            mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5 });
                         }
                     }
                 }
@@ -94,7 +98,11 @@ let consec = 0; let wait = 0; function tick() {
 
                 } else if (type == "mesh") {
                     let mesh = mobs[mNum].mesh;
-                    api.setPosition(mesh, [x, y - 0.85, z]);
+                    api.setPosition(mesh, [x, y - 1.1, z]);
+                    if (mobs[mNum].invisibleCount > 0) {
+                        api.applyEffect(m, "Invisible", null, {});
+                        mobs[mNum].invisibleCount--;
+                    }
 
                     if (z >= brainrtoDeathPos[2]) {
                         api.despawnMob(m);
