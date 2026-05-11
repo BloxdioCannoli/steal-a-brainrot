@@ -3,10 +3,10 @@
 let maxBaseNum = -1;
 let bases = {};
 basesConfig = [
-    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957] },
-    { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976] },
-    { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995] },
-    { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014] },
+    { nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]] },
+    { nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]] },
+    { nametagPos: [-1018, -994, -995], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]] },
+    { nametagPos: [-1018, -994, -1014], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]] },
 
     { nametagPos: [-984, -994, -957], spawnPos: [-984, -998, -957] },
     { nametagPos: [-984, -994, -976], spawnPos: [-984, -998, -976] },
@@ -16,6 +16,23 @@ basesConfig = [
 
 
 function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
+
+function onPlayerLeave(myId) {
+    let idx = bases.indexOf(myId);
+    maxBaseNum = idx - 1;
+    let borders = basesConfig[bases].borders;
+    let [x1, y1, z1] = borders[0];
+    let [x2, y2, z2] = borders[1];
+
+    for (let e of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
+        let type = api.getEntityType(e);
+        if (type == "Mesh") {
+            api.deleteMeshEntity(e);
+        }
+    }
+
+    delete bases[myId];
+}
 
 function onPlayerJoin(myId) {
     api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
@@ -32,11 +49,12 @@ function onPlayerJoin(myId) {
     api.setPosition(nametag, bases[myId].nametagPos);
 
     api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
+    api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
 
     //api.setPosition(myId, bases[myId].spawnPos);
 }
 
-function onWorldAttemptDespawnMob() {
+function onWorldAttemptDespawnMob(mobId) {
     return (mobs.includes(mobId) ? "preventDespawn" : true);
 }
 
