@@ -1,4 +1,4 @@
-//update: aa
+//update: aaa
 
 /*
 TODO:
@@ -332,6 +332,22 @@ function randomRarity() {
 
 function random(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function createLaser(x, y, z) {
+    laser1 = api.attemptCreateMeshEntity("BloxdBlock", {
+        size: [0.5, 3, 0.5],
+        blockName: "Red Concrete",
+    }, "laser");
+    api.setTargetedPlayerSettingForEveryone(laser1, "nameTagInfo", { content: [] });
+    api.setPosition(laser1, [x + 0.5, y + 1, z + 0.5]);
+}
+
+function removeLaser(x, y, z) {
+    for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
+        let type = api.getEntityType(e);
+        if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
+    }
 }
 
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
