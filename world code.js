@@ -1,11 +1,11 @@
-//update: aa
+//update: aaaa
 /*
 TODO:
 
+- properly clear brainrots onUpdate
 - sidebar
 - stealing brainrots from other players
 - purchasing brainrots
-- persisting brainrots across sessions
 - selling brainrots
 - claiming what brainrots earned you
 - invis solid not removed when a player leaves with an active base lock
@@ -83,28 +83,42 @@ basesConfig = [
 ];
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    let brainrots = getBrainrots(myId);
+    let ownedBrainrots = getBrainrots(myId);
 
     let mob;
     for (let m of mobs) {
         if (m.id == mobId) { mob = m; }
     }
-    let hasAdded = addBrainrot(myId, mob);
-    api.despawnMob(mobId);
-
-    let base = bases[myId];
-    try {
-        let [x1, y1, z1] = base.borders[0];
-        let [x2, y2, z2] = base.borders[1];
-        for (let ent of api.getEntitiesInRect([x1, y1, x1], [x2, y2, z2])) {
-            log(`${ent}`);
-            //if (api.getEntityType(e) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
-            api.deleteMeshEntity(ent);
-            //}
+    let rarityId = null;
+    for (let b of brainrots) {
+        for (let e of b.ents) {
+            if (e.cid == mob.brainrotData.cid) {
+                rarityId = b.cid;
+                break;
+            }
         }
-    } catch { }
+    }
+    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid] });
+    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    if (hasAdded) {
+        api.despawnMob(mobId);
 
-    updateBrainrots(myId, base.brainrotPlatforms);
+        let base = bases[myId];
+        try {
+            let [x1, y1, z1] = base.borders[0];
+            let [x2, y2, z2] = base.borders[1];
+            for (let ent of api.getEntitiesInRect([x1, y1, x1], [x2, y2, z2])) {
+                log(`${ent}`);
+                //if (api.getEntityType(e) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
+                api.deleteMeshEntity(ent);
+                //}
+            }
+        } catch { }
+
+        updateBrainrots(myId, base.brainrotPlatforms);
+    } else {
+        api.sendMessage(myId, [{ str: "You have too many brainrots!" }]);
+    }
 
     return "preventDamage";
 }
@@ -298,7 +312,8 @@ let consec = 0; let wait = 0; function tick() {
                     let mob = api.attemptSpawnMob("67", ...brainrotSpawnPos);
 
                     if (mob) {
-                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
+                        let [bx, by, bz] = brainrotDeathPos;
+                        api.setMobAiState(mob, "walkingToPosition", { pos: [bx, by, bz + 3] });
 
                         mobs.push({ id: mob, type: usedType });
                     }
@@ -310,31 +325,7 @@ let consec = 0; let wait = 0; function tick() {
                     let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
 
                     if (mob) {
-                        api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
-
-                        let mesh = api.attemptCreateMeshEntity(brainrotData.meshType, {
-                            size: brainrotData.size,
-                            autoRotate: true,
-
-                            blockName: (brainrotData.displayName ?? brainrotData.blockName),
-                            hideDist: 250,
-                        });
-                        api.setPosition(mesh, x, y, z);
-
-                        api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
-
-                        if (mesh) {
-                            api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
-                                content: [
-                                    { str: `${brainrotData.blockName.replace(" Statue", "")}`, style: { fontSize: "85px", color: rarityColors[rarity.name] } }
-                                ], backgroundColor: "rgba(0,0,0,0)",
-
-                                subtitle: [
-                                    { str: `${rarity.name}   Cost: ${brainrotData.data.cost}   Coins per Second: ${brainrotData.data.cps}` }
-                                ]
-                            });
-                            mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
-                        }
+                        spawnBrainrotEntity(mob, brainrotData, rarity.name, x, y, z);
                     }
                 }
             }
@@ -389,10 +380,6 @@ let consec = 0; let wait = 0; function tick() {
             }
             updateBaseNametag(pId);
         }
-
-        api.setClientOption(pId, "RightInfoText", [
-            { str: "Steal a Brainrot" }
-        ]);
     }
 }
 
@@ -492,43 +479,44 @@ rarityColors = {
 };
 
 brainrots = [
+    // cid = config id
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Common", chance: 1
+            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 0 },
+            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 1 },
+            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 2 },
+            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 3 },
+        ], name: "Common", chance: 1, cid: 0,
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Uncommon", chance: 0.5
+            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 0 },
+            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 1 },
+            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 2 },
+        ], name: "Uncommon", chance: 0.5, cid: 1,
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Diamond Block", displayName: "Diamond Bloxd", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Rare", chance: 0.25
+            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 0 },
+            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 1 },
+            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 2 },
+            { meshType: "BloxdBlock", blockName: "Diamond Block", displayName: "Diamond Bloxd", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 3 },
+        ], name: "Rare", chance: 0.25, cid: 2,
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Legendary", chance: 0.1
+            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 0 },
+            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 1 },
+        ], name: "Legendary", chance: 0.1, cid: 3,
     },
 
     {
         ents: [
-            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
-        ], name: "Mythical", chance: 0.05
+            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 0 },
+        ], name: "Mythical", chance: 0.05, cid: 4,
     },
 ];
 
@@ -693,15 +681,100 @@ function updateBrainrots(myId, spawnAt) {
 
         let [x, y, z] = (spawnAt[bNum] ?? [0, 0, 0]);
 
-        let brainrotData = b.brainrotData;
+        //api.log(b.id);
+        let brainrotConfig = getBrainrotById(b.id);
+        //api.log(brainrotConfig);
+
         let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
-            size: brainrotData.size,
+            size: brainrotConfig.size,
             autoRotate: true,
 
-            blockName: (brainrotData.displayName ?? brainrotData.blockName),
+            blockName: (brainrotConfig.displayName ?? brainrotConfig.blockName),
             hideDist: 250,
         });
         //api.setPosition(mesh, x + 0.5, y, z + 0.5);
         api.setPosition(mesh, x + 0, y + 0, z + 0);
     }
+}
+
+// ADMIN AND COMMAND LOGIC
+
+function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
+    api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
+
+    let mesh = api.attemptCreateMeshEntity(brainrotData.meshType, {
+        size: brainrotData.size,
+        autoRotate: true,
+
+        blockName: (brainrotData.displayName ?? brainrotData.blockName),
+        hideDist: 250,
+    });
+    api.setPosition(mesh, x, y, z);
+
+    api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
+
+    if (mesh) {
+        api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
+            content: [
+                { str: `${brainrotData.blockName.replace(" Statue", "")}`, style: { fontSize: "85px", color: rarityColors[rarityName] } }
+            ], backgroundColor: "rgba(0,0,0,0)",
+
+            subtitle: [
+                { str: `${rarityName}   Cost: ${brainrotData.data.cost}   Coins per Second: ${brainrotData.data.cps}` }
+            ]
+        });
+        mobs.push({ id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
+    }
+}
+
+function onPlayerChat(myId, message) {
+    let name = api.getEntityName(myId);
+    let admins = ["WanderingCannoli", "SKY_SPIRIT", "JavisthejavisYT"];
+
+    if (admins.includes(name) && message.startsWith("!spawn ")) {
+        let targetName = message.replace("!spawn ", "").trim().toLowerCase();
+        let found = false;
+
+        for (let category of brainrots) {
+            for (let ent of category.ents) {
+                let checkName = ent.blockName.toLowerCase();
+                let dispName = ent.displayName ? ent.displayName.toLowerCase() : "";
+
+                if (checkName === targetName || dispName === targetName || checkName.replace(" statue", "") === targetName) {
+                    let [x, y, z] = brainrotSpawnPos;
+                    let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+                    if (mob) {
+                        spawnBrainrotEntity(mob, ent, category.name, x, y, z);
+                        api.sendMessage(myId, `Spawned ${ent.blockName}!`);
+                    }
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+
+        if (!found) {
+            api.sendMessage(myId, "Brainrot not found.");
+        }
+        return "preventChat";
+    }
+}
+
+function getBrainrotById(id = [0, 0]) {
+    let brainrotConfig = null;
+    for (let b of brainrots) {
+        if (b.cid == id[0]) {
+            //api.log(`Rarity match: ${b.cid}`)
+            for (let e of b.ents) {
+                if (e.cid == id[1]) {
+                    brainrotConfig = e;
+                }
+            }
+        }
+    }
+    if (brainrotConfig) {
+        return brainrotConfig;
+    }
+    return false;
 }
