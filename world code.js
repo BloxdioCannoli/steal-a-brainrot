@@ -1,7 +1,9 @@
-//update: aaa
+//update: aaaaa
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
+
+maxBrainrots = 5; // future max: 12
 
 let defOwnedBaseNametag = {
     title: {
@@ -28,7 +30,6 @@ let defBaseNametag = {
 /*
 TODO:
 
-- locking base [ADDING]
 - sidebar
 - stealing brainrots from other players
 - purchasing brainrots
@@ -41,7 +42,7 @@ BUGS:
 - mobs sometimes mysteriously despawn (use fallback values?)
 */
 
-let defLockTime = 60;
+let defLockTime = 30;
 
 let lockedBases = {};
 let lockTime = {};
@@ -79,7 +80,7 @@ let consec = 0; let wait = 0; function tick() {
 
                 texture: "lava0",
             });
-            api.setPosition(mesh, meshPos);
+            //api.setPosition(mesh, meshPos);
 
             let particles = api.attemptCreateMeshEntity("ParticleEmitter", {
                 dir1: [-0.5, 0, -0.5],
@@ -176,7 +177,14 @@ let consec = 0; let wait = 0; function tick() {
                 let m = mobs[mNum].id;
                 let type = mobs[mNum].type;
 
-                let [x, y, z] = api.getPosition(m);
+                const remove = () => {
+                    api.despawnMob(m);
+                    api.deleteMeshEntity(mesh);
+                    mobs.splice(m, 1);
+                };
+
+                let [x, y, z] = [null, null, null];
+                try { [x, y, z] = api.getPosition(m); } catch { remove(); continue; }
 
                 if (type == "mob") {
                     if (z >= brainrotDeathPos[2]) {
@@ -193,9 +201,7 @@ let consec = 0; let wait = 0; function tick() {
                     }
 
                     if (z >= brainrotDeathPos[2]) {
-                        api.despawnMob(m);
-                        api.deleteMeshEntity(mesh);
-                        mobs.splice(m, 1);
+                        remove();
                     }
                 }
             }
@@ -211,6 +217,10 @@ let consec = 0; let wait = 0; function tick() {
             }
             updateBaseNametag(pId);
         }
+
+        api.setClientOption(pId, "RightInfoText", [
+            { str: "Steal a Brainrot" }
+        ]);
     }
 }
 
@@ -287,7 +297,7 @@ function onPlayerJoin(myId) {
 
     createLockNotif(myId, base.lockPos);
 
-    api.setPosition(myId, bases[myId].spawnPos);
+    //api.setPosition(myId, bases[myId].spawnPos);
 }
 
 function onWorldAttemptDespawnMob(mobId) {
