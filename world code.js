@@ -1,12 +1,20 @@
 //update: a
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    let brainrots = getBrainrots(myId);
     if (isCannoli(myId)) {
         log('damaged');
 
 
-        let mob = mobs[mobId];
-        addBrainrot(myId, mob);
+        let mob;
+        for (let m of mobs) {
+            //api.log(`${m.id} == ${mobId}`);
+            if (m.id == mobId) { mob = m; }
+        }
+        //api.log(`Trying to add:`);
+        //api.log(mob);
+        let hasAdded = addBrainrot(myId, mob);
+        //api.log(hasAdded);
         api.despawnMob(mobId);
 
     }
@@ -15,6 +23,29 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 }
 
 let dbListSeparator = "|dbListSeparator|";
+
+function addBrainrot(myId, brainrot) {
+    let brainrots = getBrainrots(myId);
+    let hasUpdated = false;
+
+    for (let i = 0; i < brainrots.length; i++) {
+        let b = brainrots[i];
+        //api.log(`looping, checking:`);
+        //api.log(b);
+
+        if (b === null) {
+            //api.log(`found empty spot (${b}), setting to ${JSON.stringify(brainrot)} (from ${brainrot})`);
+            brainrots[i] = brainrot;
+            hasUpdated = true;
+            break;
+        }
+    }
+
+    if (!hasUpdated) { return false; }
+
+    setBrainrots(myId, brainrots);
+    return api.getPlayerDbValue(myId, "brainrots");
+}
 
 function attemptInitBrainrotDb(myId) {
     //api.log(`== attemptInitBrainrotDb(${myId}) ==`);
@@ -33,17 +64,26 @@ function attemptInitBrainrotDb(myId) {
 
 function getBrainrots(myId) {
     //api.log(`== getBrainrots(${myId}) ==`);
-    let brainrots = api.getPlayerDbValue(myId, "brainrots").split(dbListSeparator);
-    for (let bNum in brainrots) {
-        let b = brainrots[bNum];
+    let raw = api.getPlayerDbValue(myId, "brainrots");
+    if (!raw) return [];
+
+    let brainrots = raw.split(dbListSeparator);
+
+    for (let i = 0; i < brainrots.length; i++) {
+        let b = brainrots[i];
         try {
-            brainrots[bNum] = JSON.parse(b);
-            //api.log(`parsed ${brainrots[bNum]}`);
+            if (b === "null") {
+                brainrots[i] = null;
+            } else {
+                brainrots[i] = JSON.parse(b);
+            }
+            //api.log(`parsed ${brainrots[brainrots[i]]}`);
         } catch {
-            brainrots[bNum] = "";
-            //api.log(`error parsing ${brainrots[bNum]}`);
+            brainrots[i] = null;
+            //api.log(`error parsing ${brainrots[brainrots[i]]}`);
         }
     }
+
     return brainrots;
 }
 
@@ -52,13 +92,18 @@ function setBrainrots(myId, brainrots) {
     //api.log(`Recieved values:`);
     //api.log(brainrots);
 
-    let newBrainrots = brainrots;
+    let serialized = [];
 
-    for (let bNum in brainrots) {
-        let b = brainrots[bNum];
-        brainrots[bNum] = JSON.stringify(b);
+    for (let i = 0; i < brainrots.length; i++) {
+        let b = brainrots[i];
+        if (b === null) {
+            serialized.push("null");
+        } else {
+            serialized.push(JSON.stringify(b));
+        }
     }
-    let value = brainrots.join(dbListSeparator);
+
+    let value = serialized.join(dbListSeparator);
     //api.log(`Setting value:`);
     //api.log(value);
     api.setPlayerDbValue(myId, "brainrots", value);
@@ -66,23 +111,8 @@ function setBrainrots(myId, brainrots) {
 
 function setBrainrot(myId, idx, brainrot) {
     let brainrots = getBrainrots(myId);
-    brainrots[idx] = JSON.stringify(brainrot);
-    api.setPlayerDbValue(myId, "brainrots", brainrots);
-}
-
-function addBrainrot(myId, brainrot) {
-    let brainrots = getBrainrots(myId);
-    for (let br in brainrots) {
-        let b = brainrots[br];
-        //api.log(`looping, checking:`);
-        //api.log(b);
-        if (!(b == null || b == "" || !b || b.length < 1)) {
-            //api.log(`found empty spot, setting to ${JSON.stringify(brainrot)}`);
-            brainrots[br] = JSON.stringify(brainrot);
-            break;
-        }
-    }
-    api.setPlayerDbValue(myId, "brainrots", brainrots.join(dbListSeparator));
+    brainrots[idx] = brainrot;
+    setBrainrots(myId, brainrots);
 }
 
 let lavaPos = [-999, -1002, -941];
