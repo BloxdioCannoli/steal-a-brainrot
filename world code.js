@@ -93,13 +93,16 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     api.despawnMob(mobId);
 
     let base = bases[myId];
-    let [x1, y1, z1] = base.borders[0];
-    let [x2, y2, z2] = base.borders[1];
-    for (let e of api.getEntitiesInRect([x1, y1, x1], [x2, y2, z2])) {
-        if (api.getEntityType(e) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
-            api.deleteMeshEntity(e);
+    try {
+        let [x1, y1, z1] = base.borders[0];
+        let [x2, y2, z2] = base.borders[1];
+        for (let ent of api.getEntitiesInRect([x1, y1, x1], [x2, y2, z2])) {
+            log(`${ent}`);
+            //if (api.getEntityType(e) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
+            api.deleteMeshEntity(ent);
+            //}
         }
-    }
+    } catch { }
 
     updateBrainrots(myId, base.brainrotPlatforms);
 
