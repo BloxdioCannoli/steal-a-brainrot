@@ -1,4 +1,4 @@
-//update: aaaa
+//update: aaaaa
 /*
 TODO:
 
@@ -88,9 +88,18 @@ basesConfig = [
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     let ownedBrainrots = getBrainrots(myId);
 
-    let mob;
+    let mob = "undecided";
     for (let m of mobs) {
         if (m.id == mobId) { mob = m; }
+    }
+    if (mob == "undecided") {
+        let stealable = false;
+        for (let playerId in stealable) {
+            for (let id of stealable[playerId]) {
+                if (id == mobId || id.id == mobId) { stealable = true; }
+            }
+        }
+        if (!stealable) { api.despawnMob(mobId); return "preventDamage"; }
     }
     let rarityId = null;
 
@@ -103,8 +112,18 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
             }
         }
     }
-    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid] });
-    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    // for (let rarity of brainrots) {
+    //     for (let e of rarity.ents) {
+    //         if (e.cid == mob.brainrotData.cid) {
+    //             rarityId = rarity.cid;
+    //             break;
+    //         }
+    //     }
+    //     if (rarityId) { break; }
+    // }
+
+    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
+    api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
     if (hasAdded) {
         api.despawnMob(mobId);
 
@@ -112,6 +131,13 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         clearRenderedBrainrots(myId);
 
         updateBrainrots(myId, base.brainrotPlatforms);
+        // splicing already happens on despawn
+        // for (let mNum in mobs) {
+        //     let m = mobs[mNum];
+        //     if (m.id == mobId) {
+        //         mobs.splice(mNum, 1);
+        //     }
+        // }
     } else {
         api.sendMessage(myId, [{ str: "You have too many brainrots!" }]);
     }
@@ -121,7 +147,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 
 let dbListSeparator = "|dbListSeparator|";
 
-function addBrainrot(myId, brainrot) {
+function addBrainrot(myId, content) {
     let brainrots = getBrainrots(myId);
     let hasUpdated = false;
 
@@ -129,7 +155,7 @@ function addBrainrot(myId, brainrot) {
         let b = brainrots[i];
 
         if (b === null) {
-            brainrots[i] = brainrot;
+            brainrots[i] = content;
             hasUpdated = true;
             break;
         }
@@ -323,34 +349,21 @@ let consec = 0; let wait = 0; function tick() {
         if (tickNum >= startWorldTickAt) {
             if (tickNum % (spawnFreq) == 1) {
                 let [x, y, z] = brainrotSpawnPos;
-                let usedType = "mesh";
 
-                if (usedType == "mob") {
-                    let mob = api.attemptSpawnMob("67", ...brainrotSpawnPos);
+                let rarity = randomRarity();
+                let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
 
-                    if (mob) {
-                        let [bx, by, bz] = brainrotDeathPos;
-                        api.setMobAiState(mob, "walkingToPosition", { pos: [bx, by, bz + 3] });
+                let brainrotPool = brainrots[rarity.idx].ents;
+                let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
 
-                        mobs.push({ id: mob, type: usedType });
-                    }
-                } else if (usedType == "mesh") {
-                    let rarity = randomRarity();
-                    let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
-
-                    let brainrotPool = brainrots[rarity.idx].ents;
-                    let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
-
-                    if (mob) {
-                        spawnBrainrotEntity(mob, brainrotData, rarity.name, x, y, z);
-                    }
+                if (mob) {
+                    spawnBrainrotEntity(mob, brainrotData, rarity.name, x, y, z);
                 }
             }
 
             for (let mNum in mobs) {
                 let mob = mobs[mNum];
                 let m = mobs[mNum].id;
-                let type = mobs[mNum].type;
 
                 const remove = (m, mesh) => {
                     try { api.deleteMeshEntity(mesh); } catch { }
@@ -363,26 +376,18 @@ let consec = 0; let wait = 0; function tick() {
                     remove(m, mobs[mNum]?.mesh); continue;
                 }
 
-                if (type == "mob") {
-                    if (z >= brainrotDeathPos[2]) {
-                        api.despawnMob(m);
-                        mobs.splice(m, 1);
+                let mesh = mobs[mNum].mesh;
+                api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
+                if (mobs[mNum].invisibleCount > 0) {
+                    api.applyEffect(m, "Invisible", null, {});
+                    if (mobs[mNum].invisibleCount <= 1) {
+                        api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     }
+                    mobs[mNum].invisibleCount--;
+                }
 
-                } else if (type == "mesh") {
-                    let mesh = mobs[mNum].mesh;
-                    api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
-                    if (mobs[mNum].invisibleCount > 0) {
-                        api.applyEffect(m, "Invisible", null, {});
-                        if (mobs[mNum].invisibleCount <= 1) {
-                            api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
-                        }
-                        mobs[mNum].invisibleCount--;
-                    }
-
-                    if (z >= brainrotDeathPos[2]) {
-                        remove(m, mesh);
-                    }
+                if (z >= brainrotDeathPos[2]) {
+                    remove(m, mesh);
                 }
             }
         }
@@ -663,6 +668,7 @@ function getFreeBase() {
 }
 
 function updateBaseNametag(ownerId, onJoin = false) {
+    //api.log(`called updateBaseNametag`)
     let username = api.getEntityName(ownerId);
     let base = bases[ownerId];
 
@@ -707,7 +713,8 @@ function updateBrainrots(myId, spawnAt) {
         api.setPosition(mesh, x + 0, y + 0, z + 0);
 
         let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
-        let rarityName = brainrotConfig.rarityName;
+        let rarityName = b.rarityName;
+        //api.log(`Called updateBrainrots`)
         api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
             content: [
                 { str: `${brainrotConfig.blockName.replace(" Statue", "")}`, style: { fontSize: "85px", color: rarityColors[rarityName] } }
@@ -749,6 +756,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
         });
         brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
+        api.log(mobs[mobs.length - 1]);
     }
 }
 
