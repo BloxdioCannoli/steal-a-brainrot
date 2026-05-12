@@ -1,4 +1,4 @@
-//update: aaa
+//update: aaaa
 /*
 TODO:
 
@@ -108,16 +108,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         api.despawnMob(mobId);
 
         let base = bases[myId];
-        try {
-            let [x1, y1, z1] = base.borders[0];
-            let [x2, y2, z2] = base.borders[1];
-            for (let ent of api.getEntitiesInRect([x1, y1, x1], [x2, y2, z2])) {
-                log(`${ent}`);
-                //if (api.getEntityType(e) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
-                api.deleteMeshEntity(ent);
-                //}
-            }
-        } catch { }
+        clearRenderedBrainrots(myId);
 
         updateBrainrots(myId, base.brainrotPlatforms);
     } else {
@@ -429,21 +420,12 @@ function onPlayerAltAction(myId, x, y, z, block, targetEId) {
 
 function onPlayerLeave(myId) {
     let idx = baseNum[myId];
-    let borders = basesConfig[idx].borders;
-
-    let [x1, y1, z1] = borders[0];
-    let [x2, y2, z2] = borders[1];
-
-    for (let e of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
-        let type = api.getEntityType(e);
-        if (type == "Mesh") {
-            api.deleteMeshEntity(e);
-        }
-    }
+    clearRenderedBrainrots(myId);
 
     delete bases[myId];
     delete lockTime[myId];
     delete lockedBases[myId];
+    delete stealable[myId];
 }
 
 function onPlayerJoin(myId) {
@@ -710,7 +692,7 @@ function updateBrainrots(myId, spawnAt) {
 
         //api.log(b.id);
         let brainrotConfig = getBrainrotById(b.id);
-        api.log(brainrotConfig);
+        //api.log(brainrotConfig);
 
         let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
             size: brainrotConfig.size,
@@ -819,4 +801,16 @@ function getBrainrotById(id = []) {
         return brainrotConfig;
     }
     return false;
+}
+
+function clearRenderedBrainrots(myId) {
+    let base = bases[myId];
+    let [x1, y1, z1] = base.borders[0];
+    let [x2, y2, z2] = base.borders[1];
+    for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
+        //log(`${ent}`);
+        if (api.getEntityType(ent) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
+            api.deleteMeshEntity(ent);
+        }
+    }
 }
