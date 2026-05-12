@@ -1,4 +1,4 @@
-//update: a
+//update: aa
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
@@ -209,6 +209,7 @@ let consec = 0; let wait = 0; function tick() {
                 setBaseLockedState(pId, "unlocked");
                 delete lockedBases[pId];
             }
+            updateBaseNametag(pId);
         }
     }
 }
@@ -276,12 +277,10 @@ function onPlayerJoin(myId) {
         size: 1,
     }, `${username}'s Base`);
     api.setPosition(nametag, bases[myId].nametagPos);
-    api.setTargetedPlayerSettingForEveryone(nametag, "nameTagInfo", { content: [{ str: `${username}'s Base`, style: defBaseNametag.title.style }], backgroundColor: defBaseNametag.backgroundColor });
+
+    updateBaseNametag(myId, true);
 
     lockTime[myId] = defLockTime;
-
-    api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defBaseNametag.backgroundColor });
-    api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
 
     createLockNotif(myId, base.lockPos);
 
@@ -488,4 +487,23 @@ function getFreeBase() {
         }
     }
     return false;
+}
+
+function updateBaseNametag(ownerId, onJoin = false) {
+    let username = api.getEntityName(ownerId);
+
+    let timeleft = Math.ceil((lockedBases[pId] - api.now()) / 1000);
+
+
+    if (!lockedBases[ownerId]) {
+        api.setTargetedPlayerSettingForEveryone(nametag, "nameTagInfo", { content: [{ str: `${username}'s Base`, style: defBaseNametag.title.style }], backgroundColor: defBaseNametag.title.backgroundColor });
+    } else {
+        api.setTargetedPlayerSettingForEveryone(nametag, "nameTagInfo", { content: [{ str: `${username}'s Base`, style: defBaseNametag.title.style }], backgroundColor: defBaseNametag.title.backgroundColor, subtitle: [{ str: `Time left: ${timeleft}`, style: defBaseNametag.subtitle.style }], subtitleBackgroundColor: defBaseNametag.subtitle.backgroundColor });
+    }
+    if (!lockedBases[ownerId]) {
+        api.setOtherEntitySetting(ownerId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defBaseNametag.title.backgroundColor });
+    } else {
+        api.setOtherEntitySetting(ownerId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defOwnedBaseNametag.title.backgroundColor, subtitle: [{ str: `Time left: ${timeleft}`, style: defOwnedBaseNametag.subtitle.style }], subtitleBackgroundColor: defOwnedBaseNametag.subtitle.backgroundColor });
+    }
+    if (onJoin) { api.setOtherEntitySetting(ownerId, nametag, "hasPriorityNametag", true); }
 }
