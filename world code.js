@@ -3,6 +3,28 @@
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
 
+let defOwnedBaseNametag = {
+    title: {
+        style: { color: "#d6362b", fontSize: "80px" },
+        backgroundColor: "#fa5b50",
+    },
+    subtitle: {
+        style: { color: "#d62bc5", fontSize: "50px" },
+        backgroundColor: "#e080d7",
+    },
+};
+
+let defBaseNametag = {
+    title: {
+        style: { color: "#d6362b", fontSize: "50px" },
+        backgroundColor: "#fa5b50",
+    },
+    subtitle: {
+        style: { color: "#d62bc5", fontSize: "50px" },
+        backgroundColor: "#e080d7",
+    },
+};
+
 /*
 TODO:
 
@@ -254,10 +276,11 @@ function onPlayerJoin(myId) {
         size: 1,
     }, `${username}'s Base`);
     api.setPosition(nametag, bases[myId].nametagPos);
+    api.setTargetedPlayerSettingForEveryone(nametag, "nameTagInfo", { content: [{ str: `${username}'s Base`, style: defBaseNametag.title.style }], backgroundColor: defBaseNametag.backgroundColor });
 
     lockTime[myId] = defLockTime;
 
-    api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base` }] });
+    api.setOtherEntitySetting(myId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defBaseNametag.backgroundColor });
     api.setOtherEntitySetting(myId, nametag, "hasPriorityNametag", true);
 
     createLockNotif(myId, base.lockPos);
