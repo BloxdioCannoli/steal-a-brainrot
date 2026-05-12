@@ -93,14 +93,15 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         if (m.id == mobId) { mob = m; }
     }
     let rarityId = null;
+
+    outer:
     for (let rarity of brainrots) {
         for (let e of rarity.ents) {
             if (e.cid == mob.brainrotData.cid) {
                 rarityId = rarity.cid;
-                break;
+                break outer;
             }
         }
-        if (rarityId) { break; }
     }
     let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid] });
     //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
@@ -144,7 +145,7 @@ function attemptInitBrainrotDb(myId) {
     let brainrots = api.getPlayerDbValue(myId, "brainrots");
     if (!brainrots) {
         let newBrainrots = [];
-        for (let i = 0; i <= maxBrainrots; i++) {
+        for (let i = 0; i < maxBrainrots; i++) {
             let contents = null;
             newBrainrots.push(contents);
         }
@@ -154,7 +155,9 @@ function attemptInitBrainrotDb(myId) {
 
 function getBrainrots(myId) {
     let raw = api.getPlayerDbValue(myId, "brainrots");
-    if (!raw) return [];
+    if (!raw) {
+        return Array(maxBrainrots + 1).fill(null);
+    }
 
     let brainrots = raw.split(dbListSeparator);
 
@@ -663,7 +666,7 @@ function updateBaseNametag(ownerId, onJoin = false) {
     let username = api.getEntityName(ownerId);
     let base = bases[ownerId];
 
-    let timeleft = Math.ceil((lockedBases[pId] - api.now()) / 1000);
+    let timeleft = Math.ceil((lockedBases[ownerId] - api.now()) / 1000);
 
     let nametag = base.nametag;
 
