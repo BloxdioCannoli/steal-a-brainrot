@@ -1,4 +1,4 @@
-//update: aa
+//update: aaa
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
@@ -41,7 +41,7 @@ BUGS:
 - mobs sometimes mysteriously despawn (use fallback values?)
 */
 
-let defLockTime = 10;
+let defLockTime = 60;
 
 let lockedBases = {};
 let lockTime = {};
@@ -250,6 +250,8 @@ function onPlayerLeave(myId) {
     }
 
     delete bases[myId];
+    delete lockTime[myId];
+    delete lockedBases[myId];
 }
 
 function onPlayerJoin(myId) {
@@ -277,6 +279,7 @@ function onPlayerJoin(myId) {
         size: 1,
     }, `${username}'s Base`);
     api.setPosition(nametag, bases[myId].nametagPos);
+    base.nametag = nametag;
 
     updateBaseNametag(myId, true);
 
@@ -284,7 +287,7 @@ function onPlayerJoin(myId) {
 
     createLockNotif(myId, base.lockPos);
 
-    //api.setPosition(myId, bases[myId].spawnPos);
+    api.setPosition(myId, bases[myId].spawnPos);
 }
 
 function onWorldAttemptDespawnMob(mobId) {
@@ -491,9 +494,11 @@ function getFreeBase() {
 
 function updateBaseNametag(ownerId, onJoin = false) {
     let username = api.getEntityName(ownerId);
+    let base = bases[ownerId];
 
     let timeleft = Math.ceil((lockedBases[pId] - api.now()) / 1000);
 
+    let nametag = base.nametag;
 
     if (!lockedBases[ownerId]) {
         api.setTargetedPlayerSettingForEveryone(nametag, "nameTagInfo", { content: [{ str: `${username}'s Base`, style: defBaseNametag.title.style }], backgroundColor: defBaseNametag.title.backgroundColor });
