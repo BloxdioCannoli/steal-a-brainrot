@@ -1,4 +1,4 @@
-//update: aaaa
+//update: aa
 /*
 TODO:
 
@@ -13,6 +13,9 @@ TODO:
 BUGS:
 
 */
+
+let toHide = [];
+let stealable = {};
 
 basesConfig = [
     {
@@ -90,16 +93,17 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         if (m.id == mobId) { mob = m; }
     }
     let rarityId = null;
-    for (let b of brainrots) {
-        for (let e of b.ents) {
+    for (let rarity of brainrots) {
+        for (let e of rarity.ents) {
             if (e.cid == mob.brainrotData.cid) {
-                rarityId = b.cid;
+                rarityId = rarity.cid;
                 break;
             }
         }
+        if (rarityId) { break; }
     }
     let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid] });
-    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
     if (hasAdded) {
         api.despawnMob(mobId);
 
@@ -251,6 +255,25 @@ let consec = 0; let wait = 0; function tick() {
     tickNum++;
 
     if (pNum == players.length) {
+        // world tick
+        if (toHide.length > 0) {
+            for (let hNum in toHide) {
+                let h = toHide[hNum];
+
+                let m = h.id;
+                let count = h.count;
+                let [x, y, z] = h.pos;
+
+                if (count <= 1) {
+                    api.applyEffect(m, "Invisible", null, {});
+                    api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
+                    api.setPosition(m, [x, y, z]);
+                    toHide.splice(h, 1);
+                } else {
+                    h.count--;
+                }
+            }
+        }
         if (!hasspawnedmesh) {
             let [lx, ly, lz] = lavaPos;
 
@@ -436,6 +459,8 @@ function onPlayerJoin(myId) {
     bases[myId] = { ...basesConfig[freeBaseIdx] }; bases[myId].idx = freeBaseIdx;
     let base = bases[myId];
 
+    updateBrainrots(myId, base.brainrotPlatforms);
+
     let lsp = base.laserStartPos;
     api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
 
@@ -502,7 +527,7 @@ brainrots = [
             { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 0 },
             { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 1 },
             { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 2 },
-            { meshType: "BloxdBlock", blockName: "Diamond Block", displayName: "Diamond Bloxd", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 3 },
+            { meshType: "BloxdBlock", blockName: "Block of Diamond", displayName: "Diamond Bloxd", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 }, cid: 3 },
         ], name: "Rare", chance: 0.25, cid: 2,
     },
 
@@ -674,6 +699,8 @@ function updateBaseNametag(ownerId, onJoin = false) {
 }
 
 function updateBrainrots(myId, spawnAt) {
+    stealable[myId] = [];
+
     let brainrots = getBrainrots(myId);
     for (let bNum in brainrots) {
         let b = brainrots[bNum];
@@ -683,7 +710,7 @@ function updateBrainrots(myId, spawnAt) {
 
         //api.log(b.id);
         let brainrotConfig = getBrainrotById(b.id);
-        //api.log(brainrotConfig);
+        api.log(brainrotConfig);
 
         let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
             size: brainrotConfig.size,
@@ -692,12 +719,24 @@ function updateBrainrots(myId, spawnAt) {
             blockName: (brainrotConfig.displayName ?? brainrotConfig.blockName),
             hideDist: 250,
         });
-        //api.setPosition(mesh, x + 0.5, y, z + 0.5);
         api.setPosition(mesh, x + 0, y + 0, z + 0);
+
+        let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+        let rarityName = brainrotConfig.rarityName;
+        api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
+            content: [
+                { str: `${brainrotConfig.blockName.replace(" Statue", "")}`, style: { fontSize: "85px", color: rarityColors[rarityName] } }
+            ], backgroundColor: "rgba(0,0,0,0)",
+
+            subtitle: [
+                { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   Coins per Second: ${brainrotConfig.data.cps}` }
+            ]
+        });
+        stealable[myId].push(brainrotConfig);
+        toHide.push({ id: mob, count: 3, pos: [x, y, z] });
+        api.setMobAiState(mob, "disabled", null);
     }
 }
-
-// ADMIN AND COMMAND LOGIC
 
 function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
     api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
@@ -723,10 +762,11 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
                 { str: `${rarityName}   Cost: ${brainrotData.data.cost}   Coins per Second: ${brainrotData.data.cps}` }
             ]
         });
-        mobs.push({ id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
+        mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
     }
 }
 
+// admin commands
 function onPlayerChat(myId, message) {
     let name = api.getEntityName(myId);
     let admins = ["WanderingCannoli", "SKY_SPIRIT", "JavisthejavisYT"];
@@ -761,9 +801,10 @@ function onPlayerChat(myId, message) {
     }
 }
 
-function getBrainrotById(id = [0, 0]) {
+function getBrainrotById(id = []) {
     let brainrotConfig = null;
     for (let b of brainrots) {
+        //api.log(id[0])
         if (b.cid == id[0]) {
             //api.log(`Rarity match: ${b.cid}`)
             for (let e of b.ents) {
