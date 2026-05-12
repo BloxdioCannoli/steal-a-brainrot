@@ -1,4 +1,4 @@
-//update: aa
+//update: aaa
 /*
 TODO:
 
@@ -103,7 +103,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         if (rarityId) { break; }
     }
     let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid] });
-    api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
     if (hasAdded) {
         api.despawnMob(mobId);
 
@@ -762,6 +762,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
                 { str: `${rarityName}   Cost: ${brainrotData.data.cost}   Coins per Second: ${brainrotData.data.cps}` }
             ]
         });
+        brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
     }
 }
