@@ -17,14 +17,14 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 let dbListSeparator = "|dbListSeparator|";
 
 function attemptInitBrainrotDb(myId) {
-    api.log(`== attemptInitBrainrotDb(${myId}) ==`);
+    //api.log(`== attemptInitBrainrotDb(${myId}) ==`);
     let brainrots = api.getPlayerDbValue(myId, "brainrots");
     if (!brainrots) {
         let newBrainrots = [];
         for (let i = 0; i <= maxBrainrots; i++) {
-            let contents = { name: "test" };
-            api.log(`Adding to the array on init:`);
-            api.log(contents);
+            let contents = null;
+            //api.log(`Adding to the array on init:`);
+            //api.log(contents);
             newBrainrots.push(contents);
         }
         setBrainrots(myId, newBrainrots);
@@ -32,25 +32,25 @@ function attemptInitBrainrotDb(myId) {
 }
 
 function getBrainrots(myId) {
-    api.log(`== getBrainrots(${myId}) ==`);
+    //api.log(`== getBrainrots(${myId}) ==`);
     let brainrots = api.getPlayerDbValue(myId, "brainrots").split(dbListSeparator);
     for (let bNum in brainrots) {
         let b = brainrots[bNum];
         try {
             brainrots[bNum] = JSON.parse(b);
-            api.log(`parsed ${brainrots[bNum]}`);
+            //api.log(`parsed ${brainrots[bNum]}`);
         } catch {
             brainrots[bNum] = "";
-            api.log(`error parsing ${brainrots[bNum]}`);
+            //api.log(`error parsing ${brainrots[bNum]}`);
         }
     }
     return brainrots;
 }
 
 function setBrainrots(myId, brainrots) {
-    api.log(`== setBrainrots(${myId}, ${brainrots}) ==`);
-    api.log(`Recieved values:`);
-    api.log(brainrots);
+    //api.log(`== setBrainrots(${myId}, ${brainrots}) ==`);
+    //api.log(`Recieved values:`);
+    //api.log(brainrots);
 
     let newBrainrots = brainrots;
 
@@ -59,8 +59,8 @@ function setBrainrots(myId, brainrots) {
         brainrots[bNum] = JSON.stringify(b);
     }
     let value = brainrots.join(dbListSeparator);
-    api.log(`Setting value:`);
-    api.log(value);
+    //api.log(`Setting value:`);
+    //api.log(value);
     api.setPlayerDbValue(myId, "brainrots", value);
 }
 
@@ -74,10 +74,10 @@ function addBrainrot(myId, brainrot) {
     let brainrots = getBrainrots(myId);
     for (let br in brainrots) {
         let b = brainrots[br];
-        api.log(`looping, checking:`);
-        api.log(b);
+        //api.log(`looping, checking:`);
+        //api.log(b);
         if (!(b == null || b == "" || !b || b.length < 1)) {
-            api.log(`found empty spot, setting to ${JSON.stringify(brainrot)}`);
+            //api.log(`found empty spot, setting to ${JSON.stringify(brainrot)}`);
             brainrots[br] = JSON.stringify(brainrot);
             break;
         }
@@ -291,6 +291,10 @@ let consec = 0; let wait = 0; function tick() {
                     api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                     if (mobs[mNum].invisibleCount > 0) {
                         api.applyEffect(m, "Invisible", null, {});
+                        if (mobs[mNum].invisibleCount <= 1) {
+                            api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
+                            //api.log(`possible to scale ${m}`);
+                        }
                         mobs[mNum].invisibleCount--;
                     }
 
