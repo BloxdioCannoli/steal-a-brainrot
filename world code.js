@@ -1,4 +1,18 @@
 //update: a
+/*
+TODO:
+
+- sidebar
+- stealing brainrots from other players
+- purchasing brainrots
+- persisting brainrots across sessions
+- selling brainrots
+- claiming what brainrots earned you
+- invis solid not removed when a player leaves with an active base lock
+
+BUGS:
+
+*/
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     let brainrots = getBrainrots(myId);
@@ -128,21 +142,6 @@ let defBaseNametag = {
         backgroundColor: "#e080d7",
     },
 };
-
-/*
-TODO:
-
-- sidebar
-- stealing brainrots from other players
-- purchasing brainrots
-- persisting brainrots across sessions
-- selling brainrots
-- claiming what brainrots earned you
-
-BUGS:
-
-- mobs sometimes mysteriously despawn (use fallback values?)
-*/
 
 let defLockTime = 30;
 
@@ -618,4 +617,25 @@ function updateBaseNametag(ownerId, onJoin = false) {
         api.setOtherEntitySetting(ownerId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defOwnedBaseNametag.title.backgroundColor, subtitle: [{ str: `Time left: ${timeleft}`, style: defOwnedBaseNametag.subtitle.style }], subtitleBackgroundColor: defOwnedBaseNametag.subtitle.backgroundColor });
     }
     if (onJoin) { api.setOtherEntitySetting(ownerId, nametag, "hasPriorityNametag", true); }
+}
+
+function updateBrainrots(myId, spawnAt) {
+    let brainrots = getBrainrots(myId);
+    for (let bNum in brainrots) {
+        let b = brainrots[bNum];
+        if (!b) { continue; }
+
+        let [x, y, z] = (spawnAt[bNum] ?? [0, 0, 0]);
+
+        let brainrotData = b.brainrotData;
+        let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
+            size: brainrotData.size,
+            autoRotate: true,
+
+            blockName: (brainrotData.displayName ?? brainrotData.blockName),
+            hideDist: 250,
+        });
+        //api.setPosition(mesh, x + 0.5, y, z + 0.5);
+        api.setPosition(mesh, x + 0, y + 0, z + 0);
+    }
 }
