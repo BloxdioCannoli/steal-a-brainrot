@@ -1,4 +1,89 @@
-//update: aa
+//update: a
+
+function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    if (isCannoli(myId)) {
+        log('damaged');
+
+
+        let mob = mobs[mobId];
+        addBrainrot(myId, mob);
+        api.despawnMob(mobId);
+
+    }
+
+    return "preventDamage";
+}
+
+let dbListSeparator = "|dbListSeparator|";
+
+function attemptInitBrainrotDb(myId) {
+    api.log(`== attemptInitBrainrotDb(${myId}) ==`);
+    let brainrots = api.getPlayerDbValue(myId, "brainrots");
+    if (!brainrots) {
+        let newBrainrots = [];
+        for (let i = 0; i <= maxBrainrots; i++) {
+            let contents = { name: "test" };
+            api.log(`Adding to the array on init:`);
+            api.log(contents);
+            newBrainrots.push(contents);
+        }
+        setBrainrots(myId, newBrainrots);
+    }
+}
+
+function getBrainrots(myId) {
+    api.log(`== getBrainrots(${myId}) ==`);
+    let brainrots = api.getPlayerDbValue(myId, "brainrots").split(dbListSeparator);
+    for (let bNum in brainrots) {
+        let b = brainrots[bNum];
+        try {
+            brainrots[bNum] = JSON.parse(b);
+            api.log(`parsed ${brainrots[bNum]}`);
+        } catch {
+            brainrots[bNum] = "";
+            api.log(`error parsing ${brainrots[bNum]}`);
+        }
+    }
+    return brainrots;
+}
+
+function setBrainrots(myId, brainrots) {
+    api.log(`== setBrainrots(${myId}, ${brainrots}) ==`);
+    api.log(`Recieved values:`);
+    api.log(brainrots);
+
+    let newBrainrots = brainrots;
+
+    for (let bNum in brainrots) {
+        let b = brainrots[bNum];
+        brainrots[bNum] = JSON.stringify(b);
+    }
+    let value = brainrots.join(dbListSeparator);
+    api.log(`Setting value:`);
+    api.log(value);
+    api.setPlayerDbValue(myId, "brainrots", value);
+}
+
+function setBrainrot(myId, idx, brainrot) {
+    let brainrots = getBrainrots(myId);
+    brainrots[idx] = JSON.stringify(brainrot);
+    api.setPlayerDbValue(myId, "brainrots", brainrots);
+}
+
+function addBrainrot(myId, brainrot) {
+    let brainrots = getBrainrots(myId);
+    for (let br in brainrots) {
+        let b = brainrots[br];
+        api.log(`looping, checking:`);
+        api.log(b);
+        if (!(b == null || b == "" || !b || b.length < 1)) {
+            api.log(`found empty spot, setting to ${JSON.stringify(brainrot)}`);
+            brainrots[br] = JSON.stringify(brainrot);
+            break;
+        }
+    }
+    api.setPlayerDbValue(myId, "brainrots", brainrots.join(dbListSeparator));
+}
 
 let lavaPos = [-999, -1002, -941];
 
@@ -183,8 +268,17 @@ let consec = 0; let wait = 0; function tick() {
                 let m = mobs[mNum].id;
                 let type = mobs[mNum].type;
 
+                const remove = (m, mesh) => {
+                    try { api.deleteMeshEntity(mesh); } catch { }
+                    try { api.despawnMob(m); } catch { }
+                    mobs.splice(m, 1);
+                };
+
                 let [x, y, z] = [null, null, null];
-                try { [x, y, z] = api.getPosition(m); } catch { remove(); continue; }
+                try { [x, y, z] = api.getPosition(m); } catch {
+                    //api.log(`${m}, ${mobs[mNum]}`)
+                    remove(m, mobs[mNum]?.mesh); continue;
+                }
 
                 if (type == "mob") {
                     if (z >= brainrotDeathPos[2]) {
@@ -193,12 +287,6 @@ let consec = 0; let wait = 0; function tick() {
                     }
 
                 } else if (type == "mesh") {
-                    const remove = () => {
-                        try { api.deleteMeshEntity(mesh); } catch { }
-                        try { api.despawnMob(m); } catch { }
-                        mobs.splice(m, 1);
-                    };
-
                     let mesh = mobs[mNum].mesh;
                     api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                     if (mobs[mNum].invisibleCount > 0) {
@@ -207,7 +295,7 @@ let consec = 0; let wait = 0; function tick() {
                     }
 
                     if (z >= brainrotDeathPos[2]) {
-                        remove();
+                        remove(m, mesh);
                     }
                 }
             }
@@ -271,6 +359,8 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
+    attemptInitBrainrotDb(myId);
+
     api.setWalkThroughType(myId, "Pink Portal");
     api.setMaxPlayers(8, 8);
     api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
@@ -311,13 +401,6 @@ function onWorldAttemptDespawnMob(mobId) {
         //api.log(`${m.id} == ${mobId}`);
         if (m.id == mobId) { return "preventDespawn"; }
     }
-}
-
-function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    if (isCannoli(myId)) {
-        log('damaged');
-    }
-    return "preventDamage";
 }
 
 let defSize = 2;
@@ -522,30 +605,4 @@ function updateBaseNametag(ownerId, onJoin = false) {
         api.setOtherEntitySetting(ownerId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defOwnedBaseNametag.title.backgroundColor, subtitle: [{ str: `Time left: ${timeleft}`, style: defOwnedBaseNametag.subtitle.style }], subtitleBackgroundColor: defOwnedBaseNametag.subtitle.backgroundColor });
     }
     if (onJoin) { api.setOtherEntitySetting(ownerId, nametag, "hasPriorityNametag", true); }
-}
-
-function getBrainrots(myId) {
-    return api.getPlayerDbValue(myId, "brainrots").split(dbListSeparator);
-}
-
-function setBrainrots(myId, brainrots) {
-    api.setPlayerDbValue(myId, "brainrots", brainrots.join(dbListSeparator));
-}
-
-function setBrainrot(myId, idx, brainrot) {
-    let brainrots = getBrainrots(myId);
-    brainrots[idx] = brainrot;
-    api.setPlayerDbValue(myId, "brainrots", brainrots);
-}
-
-function addBrainrot(myId, idx, brainrot) {
-    let brainrots = getBrainrots(myId);
-    for (let br in brainrots) {
-        let b = brainrots[br];
-        if (b != null) {
-            brainrots[br] = brainrot;
-            break;
-        }
-    }
-    api.setPlayerDbValue(myId, "brainrots", brainrots);
 }
