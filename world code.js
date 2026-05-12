@@ -1,4 +1,4 @@
-//update: aaaaa
+//update: aaaaaaa
 /*
 TODO:
 
@@ -103,27 +103,21 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     }
     let rarityId = null;
 
+    //api.log("---");
+    //api.log(mob);
     outer:
     for (let rarity of brainrots) {
         for (let e of rarity.ents) {
-            if (e.cid == mob.brainrotData.cid) {
+            //api.log(e);
+            if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
                 rarityId = rarity.cid;
                 break outer;
             }
         }
     }
-    // for (let rarity of brainrots) {
-    //     for (let e of rarity.ents) {
-    //         if (e.cid == mob.brainrotData.cid) {
-    //             rarityId = rarity.cid;
-    //             break;
-    //         }
-    //     }
-    //     if (rarityId) { break; }
-    // }
 
     let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
-    api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
     if (hasAdded) {
         api.despawnMob(mobId);
 
@@ -131,13 +125,6 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         clearRenderedBrainrots(myId);
 
         updateBrainrots(myId, base.brainrotPlatforms);
-        // splicing already happens on despawn
-        // for (let mNum in mobs) {
-        //     let m = mobs[mNum];
-        //     if (m.id == mobId) {
-        //         mobs.splice(mNum, 1);
-        //     }
-        // }
     } else {
         api.sendMessage(myId, [{ str: "You have too many brainrots!" }]);
     }
@@ -756,7 +743,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
         });
         brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
-        api.log(mobs[mobs.length - 1]);
+        //api.log(mobs[mobs.length - 1]);
     }
 }
 
