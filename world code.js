@@ -119,7 +119,7 @@ let spawnFreq = 23;
 const maxConsec = 2;
 const waitNum = 5;
 
-maxBrainrots = 5; // future max: 12
+maxBrainrots = 12; // real max: 12
 
 let defOwnedBaseNametag = {
     title: {
