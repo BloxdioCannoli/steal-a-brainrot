@@ -8,13 +8,9 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 
         let mob;
         for (let m of mobs) {
-            //api.log(`${m.id} == ${mobId}`);
             if (m.id == mobId) { mob = m; }
         }
-        //api.log(`Trying to add:`);
-        //api.log(mob);
         let hasAdded = addBrainrot(myId, mob);
-        //api.log(hasAdded);
         api.despawnMob(mobId);
 
     }
@@ -30,11 +26,8 @@ function addBrainrot(myId, brainrot) {
 
     for (let i = 0; i < brainrots.length; i++) {
         let b = brainrots[i];
-        //api.log(`looping, checking:`);
-        //api.log(b);
 
         if (b === null) {
-            //api.log(`found empty spot (${b}), setting to ${JSON.stringify(brainrot)} (from ${brainrot})`);
             brainrots[i] = brainrot;
             hasUpdated = true;
             break;
@@ -48,14 +41,11 @@ function addBrainrot(myId, brainrot) {
 }
 
 function attemptInitBrainrotDb(myId) {
-    //api.log(`== attemptInitBrainrotDb(${myId}) ==`);
     let brainrots = api.getPlayerDbValue(myId, "brainrots");
     if (!brainrots) {
         let newBrainrots = [];
         for (let i = 0; i <= maxBrainrots; i++) {
             let contents = null;
-            //api.log(`Adding to the array on init:`);
-            //api.log(contents);
             newBrainrots.push(contents);
         }
         setBrainrots(myId, newBrainrots);
@@ -63,7 +53,6 @@ function attemptInitBrainrotDb(myId) {
 }
 
 function getBrainrots(myId) {
-    //api.log(`== getBrainrots(${myId}) ==`);
     let raw = api.getPlayerDbValue(myId, "brainrots");
     if (!raw) return [];
 
@@ -77,10 +66,8 @@ function getBrainrots(myId) {
             } else {
                 brainrots[i] = JSON.parse(b);
             }
-            //api.log(`parsed ${brainrots[brainrots[i]]}`);
         } catch {
             brainrots[i] = null;
-            //api.log(`error parsing ${brainrots[brainrots[i]]}`);
         }
     }
 
@@ -88,10 +75,6 @@ function getBrainrots(myId) {
 }
 
 function setBrainrots(myId, brainrots) {
-    //api.log(`== setBrainrots(${myId}, ${brainrots}) ==`);
-    //api.log(`Recieved values:`);
-    //api.log(brainrots);
-
     let serialized = [];
 
     for (let i = 0; i < brainrots.length; i++) {
@@ -104,8 +87,6 @@ function setBrainrots(myId, brainrots) {
     }
 
     let value = serialized.join(dbListSeparator);
-    //api.log(`Setting value:`);
-    //api.log(value);
     api.setPlayerDbValue(myId, "brainrots", value);
 }
 
@@ -270,7 +251,7 @@ let consec = 0; let wait = 0; function tick() {
                             size: brainrotData.size,
                             autoRotate: true,
 
-                            blockName: brainrotData.blockName,
+                            blockName: (brainrotData.displayName ?? brainrotData.blockName),
                             hideDist: 250,
                         });
                         api.setPosition(mesh, x, y, z);
@@ -287,7 +268,7 @@ let consec = 0; let wait = 0; function tick() {
                                     { str: `${rarity.name}   Cost: ${brainrotData.data.cost}   Coins per Second: ${brainrotData.data.cps}` }
                                 ]
                             });
-                            mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5, offset: brainrotData.offset });
+                            mobs.push({ id: mob, mesh: mesh, type: usedType, invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
                         }
                     }
                 }
@@ -306,7 +287,6 @@ let consec = 0; let wait = 0; function tick() {
 
                 let [x, y, z] = [null, null, null];
                 try { [x, y, z] = api.getPosition(m); } catch {
-                    //api.log(`${m}, ${mobs[mNum]}`)
                     remove(m, mobs[mNum]?.mesh); continue;
                 }
 
@@ -323,7 +303,6 @@ let consec = 0; let wait = 0; function tick() {
                         api.applyEffect(m, "Invisible", null, {});
                         if (mobs[mNum].invisibleCount <= 1) {
                             api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
-                            //api.log(`possible to scale ${m}`);
                         }
                         mobs[mNum].invisibleCount--;
                     }
@@ -432,7 +411,6 @@ function onPlayerJoin(myId) {
 
 function onWorldAttemptDespawnMob(mobId) {
     for (let m of mobs) {
-        //api.log(`${m.id} == ${mobId}`);
         if (m.id == mobId) { return "preventDespawn"; }
     }
 }
@@ -471,6 +449,7 @@ brainrots = [
             { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
             { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
             { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
+            { meshType: "BloxdBlock", blockName: "Diamond Block", displayName: "Diamond Bloxd", size: defSize, offset: defOffset, data: { cps: 100, cost: 100 } },
         ], name: "Rare", chance: 0.25
     },
 
