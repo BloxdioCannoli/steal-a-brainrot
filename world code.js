@@ -1,7 +1,13 @@
-//update: aaaaa
+//update: aa
+
+let lavaPos = [-999, -1002, -941];
 
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
+
+let spawnFreq = 23;
+const maxConsec = 2;
+const waitNum = 5;
 
 maxBrainrots = 5; // future max: 12
 
@@ -71,16 +77,16 @@ let consec = 0; let wait = 0; function tick() {
 
     if (pNum == players.length) {
         if (!hasspawnedmesh) {
-            let meshPos = [-999, -1000, -941];
+            let [lx, ly, lz] = lavaPos;
 
             let mesh = api.attemptCreateMeshEntity("Box", {
-                height: 1,
+                height: 3,
                 width: 2,
                 depth: 2,
 
                 texture: "lava0",
             });
-            //api.setPosition(mesh, meshPos);
+            api.setPosition(mesh, lavaPos);
 
             let particles = api.attemptCreateMeshEntity("ParticleEmitter", {
                 dir1: [-0.5, 0, -0.5],
@@ -88,13 +94,13 @@ let consec = 0; let wait = 0; function tick() {
 
                 emitRate: 10,
                 texture: "square_particle",
-                minLifeTime: 1,
-                maxLifeTime: 1,
+                minLifeTime: 0.5,
+                maxLifeTime: 0.5,
                 minEmitPower: 1,
                 maxEmitPower: 2,
                 minSize: 0.2,
                 maxSize: 0.2,
-                manualEmitCount: 20,
+                manualEmitCount: 50,
                 gravity: [0, -10, 0],
                 colorGradients: [
                     {
@@ -117,7 +123,7 @@ let consec = 0; let wait = 0; function tick() {
                 width: 1,
                 depth: 1,
             });
-            api.setPosition(particles, meshPos);
+            api.setPosition(particles, [lx, ly + 2, lz]);
 
             hasspawnedmesh = true;
         }
@@ -177,12 +183,6 @@ let consec = 0; let wait = 0; function tick() {
                 let m = mobs[mNum].id;
                 let type = mobs[mNum].type;
 
-                const remove = () => {
-                    api.despawnMob(m);
-                    api.deleteMeshEntity(mesh);
-                    mobs.splice(m, 1);
-                };
-
                 let [x, y, z] = [null, null, null];
                 try { [x, y, z] = api.getPosition(m); } catch { remove(); continue; }
 
@@ -193,6 +193,12 @@ let consec = 0; let wait = 0; function tick() {
                     }
 
                 } else if (type == "mesh") {
+                    const remove = () => {
+                        try { api.deleteMeshEntity(mesh); } catch { }
+                        try { api.despawnMob(m); } catch { }
+                        mobs.splice(m, 1);
+                    };
+
                     let mesh = mobs[mNum].mesh;
                     api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                     if (mobs[mNum].invisibleCount > 0) {
@@ -267,7 +273,7 @@ function onPlayerLeave(myId) {
 function onPlayerJoin(myId) {
     api.setWalkThroughType(myId, "Pink Portal");
     api.setMaxPlayers(8, 8);
-    api.setWalkThroughRect(myId, [-1000, -997, -942], [-999, -1000, -941], 0);
+    api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
 
     let username = api.getEntityName(myId);
     let freeBaseIdx = getFreeBase();
@@ -364,11 +370,6 @@ brainrots = [
         ], name: "Mythical", chance: 0.05
     },
 ];
-
-let spawnFreq = 23;
-
-const maxConsec = 5;
-const waitNum = 5;
 
 tickNum = 0;
 
@@ -521,4 +522,30 @@ function updateBaseNametag(ownerId, onJoin = false) {
         api.setOtherEntitySetting(ownerId, nametag, "nameTagInfo", { content: [{ str: `Your base`, style: defOwnedBaseNametag.title.style }], backgroundColor: defOwnedBaseNametag.title.backgroundColor, subtitle: [{ str: `Time left: ${timeleft}`, style: defOwnedBaseNametag.subtitle.style }], subtitleBackgroundColor: defOwnedBaseNametag.subtitle.backgroundColor });
     }
     if (onJoin) { api.setOtherEntitySetting(ownerId, nametag, "hasPriorityNametag", true); }
+}
+
+function getBrainrots(myId) {
+    return api.getPlayerDbValue(myId, "brainrots").split(dbListSeparator);
+}
+
+function setBrainrots(myId, brainrots) {
+    api.setPlayerDbValue(myId, "brainrots", brainrots.join(dbListSeparator));
+}
+
+function setBrainrot(myId, idx, brainrot) {
+    let brainrots = getBrainrots(myId);
+    brainrots[idx] = brainrot;
+    api.setPlayerDbValue(myId, "brainrots", brainrots);
+}
+
+function addBrainrot(myId, idx, brainrot) {
+    let brainrots = getBrainrots(myId);
+    for (let br in brainrots) {
+        let b = brainrots[br];
+        if (b != null) {
+            brainrots[br] = brainrot;
+            break;
+        }
+    }
+    api.setPlayerDbValue(myId, "brainrots", brainrots);
 }
