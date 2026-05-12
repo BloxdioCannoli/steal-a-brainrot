@@ -1,4 +1,4 @@
-//update: aaaaaaa
+//update: aaaa
 /*
 TODO:
 
@@ -86,6 +86,7 @@ basesConfig = [
 ];
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    //api.log("damage detected");
     let ownedBrainrots = getBrainrots(myId);
 
     let mob = "undecided";
@@ -99,7 +100,10 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
                 if (id == mobId || id.id == mobId) { stealable = true; }
             }
         }
-        if (!stealable) { api.despawnMob(mobId); return "preventDamage"; }
+        if (!stealable) { api.despawnMob(mobId); return "preventDamage"; } else {
+            api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
+            return "preventDamage";
+        }
     }
     let rarityId = null;
 
@@ -272,7 +276,7 @@ let consec = 0; let wait = 0; function tick() {
                 let [x, y, z] = h.pos;
 
                 if (count <= 1) {
-                    api.applyEffect(m, "Invisible", null, {});
+                    //api.applyEffect(m, "Invisible", null, {});
                     api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     api.setPosition(m, [x, y, z]);
                     toHide.splice(h, 1);
@@ -339,6 +343,7 @@ let consec = 0; let wait = 0; function tick() {
 
                 let rarity = randomRarity();
                 let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+                //api.log(`Spawned mob ${mob}`)
 
                 let brainrotPool = brainrots[rarity.idx].ents;
                 let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
@@ -366,7 +371,7 @@ let consec = 0; let wait = 0; function tick() {
                 let mesh = mobs[mNum].mesh;
                 api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                 if (mobs[mNum].invisibleCount > 0) {
-                    api.applyEffect(m, "Invisible", null, {});
+                   // api.applyEffect(m, "Invisible", null, {});
                     if (mobs[mNum].invisibleCount <= 1) {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     }
@@ -464,6 +469,8 @@ function onPlayerJoin(myId) {
 }
 
 function onWorldAttemptDespawnMob(mobId) {
+    let type = api.getEntityType(mobId);
+    api.log(`Attempted to despawn ${type}`);
     for (let m of mobs) {
         if (m.id == mobId) { return "preventDespawn"; }
     }
@@ -699,7 +706,7 @@ function updateBrainrots(myId, spawnAt) {
         });
         api.setPosition(mesh, x + 0, y + 0, z + 0);
 
-        let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+        let mob = api.attemptSpawnMob("Draugr Zombie", ...brainrotSpawnPos);
         let rarityName = b.rarityName;
         //api.log(`Called updateBrainrots`)
         api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
@@ -711,7 +718,7 @@ function updateBrainrots(myId, spawnAt) {
                 { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   Coins per Second: ${brainrotConfig.data.cps}` }
             ]
         });
-        stealable[myId].push(brainrotConfig);
+        stealable[myId].push(b.id);
         toHide.push({ id: mob, count: 3, pos: [x, y, z] });
         api.setMobAiState(mob, "disabled", null);
     }
