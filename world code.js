@@ -1,4 +1,4 @@
-//update: aaa
+//update: aaaaa
 
 /*
 TODO:
@@ -665,8 +665,9 @@ function createLaser(x, y, z, height = 5) {
 }
 
 function removeLaser(x, y, z) {
-    let type = api.getEntityType(e);
     for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
+    let type = api.getEntityType(e);
+    
         if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
     }
 }
