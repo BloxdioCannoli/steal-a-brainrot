@@ -1,4 +1,4 @@
-//update: aaaaaa
+//update: a
 
 /*
 TODO:
@@ -283,7 +283,7 @@ let consec = 0; let wait = 0; function tick() {
 
                 //api.log(`toHide element at ${[x, y, z]} found`)
 
-                if (count <= 1) {
+                if (count <= 8) {
                     if (hideMobs) {
                         api.applyEffect(m, "Invisible", null, {});
                     }
@@ -291,11 +291,11 @@ let consec = 0; let wait = 0; function tick() {
                     api.setPosition(m, [x, y, z]);
                     let effects = api.getEffects(m);
                     //api.log(effects)
-                    toHide.splice(h, 1);
+                    if (effects.includes("Invisible") && count <= 1) {
+                        toHide.splice(h, 1); continue;
+                    }
                     //api.log(`toHide element at ${[x, y, z]} found`)
-                } else {
-                    h.count--;
-                }
+                }; h.count--;
             }
         }
         if (!hasspawnedmesh) {
@@ -808,7 +808,7 @@ function updateBrainrots(myId, spawnAt) {
         api.setPosition(mob, x + 0, y + 0, z + 0);
 
         stealable[myId].push(b.id);
-        toHide.push({ id: mob, count: 1, pos: [x, y, z] });
+        toHide.push({ id: mob, count: 10, pos: [x, y, z] });
         api.log(`Pushed to toHide`);
         api.setMobAiState(mob, "disabled", null);
     }
