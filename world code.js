@@ -1,4 +1,4 @@
-//update: aaaaaaaaaa
+//update: a
 
 /*
 TODO:
@@ -12,15 +12,15 @@ TODO:
 - invis solid not removed when a player leaves with an active base lock
 
 BUGS:
-- Brainrots not being able to be claimed at a certain point (should be fixed, not super tested yet)
+- Brainrots not being able to be claimed at a certain point(should be fixed, not super tested yet)
 
-==
-- Hitbox NPCs (set to zombies now to distinguish) appear at the brainrot spawn pos
+    ==
+    - Hitbox NPCs(set to zombies now to distinguish) appear at the brainrot spawn pos;
 notes:
 - should be disabled
-- STARTS APPEARING ON:
+    - STARTS APPEARING ON:
 when there are 3 brainrots // also spawns an additional zombie at the player's base
-==
+    ==
 */
 
 let oldCoins = {};
@@ -544,7 +544,6 @@ function onPlayerJoin(myId) {
     updateBaseNametag(myId, true);
 
     lockTime[myId] = defLockTime;
-
     createLockNotif(myId, base.lockPos);
 
     //api.setPosition(myId, bases[myId].spawnPos);
@@ -667,10 +666,8 @@ function createLaser(x, y, z, height = 5) {
 }
 
 function removeLaser(x, y, z) {
-    for (let e of api.getEntitiesInRect([x - 1, y - 1, z - 1], [x + 1, y + 1, z + 1])) {
-        let type = api.getEntityType(e);
-        if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
-    }
+    let type = api.getEntityType(e);
+    if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
 }
 
 function createLockNotif(myId, pos) {
@@ -718,7 +715,7 @@ function setBaseLockedState(myId, type = "locked") {
             let [olx, oy, oz] = laser;
 
             removeLaser(olx, oy, oz);
-            api.setBlockRect([olx, oy + 1, oz], [olx, oy + 3, oz], "Air");
+            api.setBlockRect([olx, oy + 1, oz], [olx, oy + 3, oz, "Air"]);
         }
     }
 };
@@ -870,7 +867,6 @@ function onPlayerChat(myId, message) {
         return "preventChat";
     }
 }
-
 function getBrainrotById(id = []) {
     let brainrotConfig = null;
     for (let b of brainrots) {
@@ -896,7 +892,7 @@ function clearRenderedBrainrots(myId) {
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
         //log(`${ent}`);
-        if (api.getEntityType(ent) == "Mesh" /*&& !api.getEntityName(e).includes("'")*/) {
+        if (api.getEntityType(ent) == "Mesh") { // && !api.getEntityName(e).includes("'")
             api.deleteMeshEntity(ent);
         }
     }
