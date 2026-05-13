@@ -1,4 +1,4 @@
-//update: aaaaaaaaa
+//update: aaaaaaaaaa
 
 /*
 TODO:
@@ -443,6 +443,11 @@ let consec = 0; let wait = 0; function tick() {
         if (coins != oldCoins[pId]) {
             api.setPlayerDbValue(pId, "coins", coins);
             api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
+            api.setTargetedPlayerSettingForEveryone(pId, "lobbyLeaderboardValues", {
+                coins: [
+                    { str: `${coins}` }
+                ],
+            });
         }
 
         oldCoins[pId] = coins;
@@ -452,7 +457,7 @@ let consec = 0; let wait = 0; function tick() {
 function onPlayerAltAction(myId, x, y, z, block, targetEId) {
     let [lx, ly, lz] = bases[myId].lockPos;
 
-    if (block == "Bin") { api.setPlayerDbValue(myId, "coins", 0); return }
+    if (block == "Bin") { api.setPlayerDbValue(myId, "coins", 0); return; }
 
     if (x == lx && y == ly && z == lz) {
         if (!lockedBases[myId]) {
@@ -488,6 +493,19 @@ function onPlayerJoin(myId) {
         api.setPlayerDbValue(myId, "coins", 0);
     }
     updateSidebar[myId] = true;
+
+    lbNameStyle = { color: "lightgray", fontWeight: "800" };
+
+    api.setClientOption(myId, "lobbyLeaderboardInfo", {
+        name: {
+            displayName: [{ icon: "Name Tag" }, { str: "Name", style: lbNameStyle, }],
+            sortPriority: 1,
+        },
+        coins: {
+            displayName: [{ icon: "Gold Coin" }, { str: "Coins", style: lbNameStyle, }],
+            sortPriority: 0,
+        },
+    });
 
     let username = api.getEntityName(myId);
     if (username == "JavisthejavisYT") { // reset people with older versions of DB
