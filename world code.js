@@ -1,4 +1,4 @@
-//update: a
+//update: aaa
 
 /*
 TODO:
@@ -14,20 +14,15 @@ TODO:
 BUGS:
 - Brainrots not being able to be claimed at a certain point(should be fixed, not super tested yet)
 
-    ==
-    - Hitbox NPCs(set to zombies now to distinguish) appear at the brainrot spawn pos;
-notes:
-- should be disabled
-    - STARTS APPEARING ON:
-when there are 3 brainrots // also spawns an additional zombie at the player's base
-    ==
+- some hithoxes are not set
 */
 
+hideMobs = true;
 let oldCoins = {};
 
 let updateSidebar = {};
-let toHide = [];
-let stealable = {};
+toHide = [];
+stealable = {};
 
 basesConfig = [
     {
@@ -289,7 +284,9 @@ let consec = 0; let wait = 0; function tick() {
                 let [x, y, z] = h.pos;
 
                 if (count <= 1) {
-                    //api.applyEffect(m, "Invisible", null, {});
+                    if (hideMobs) {
+                        api.applyEffect(m, "Invisible", null, {});
+                    }
                     api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     api.setPosition(m, [x, y, z]);
                     toHide.splice(h, 1);
@@ -385,7 +382,9 @@ let consec = 0; let wait = 0; function tick() {
                 let mesh = mobs[mNum].mesh;
                 api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                 if (mobs[mNum].invisibleCount > 0) {
-                    // api.applyEffect(m, "Invisible", null, {});
+                    if (hideMobs) {
+                        api.applyEffect(m, "Invisible", null, {});
+                    }
                     if (mobs[mNum].invisibleCount <= 1) {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     }
@@ -667,7 +666,9 @@ function createLaser(x, y, z, height = 5) {
 
 function removeLaser(x, y, z) {
     let type = api.getEntityType(e);
-    if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
+    for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
+        if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
+    }
 }
 
 function createLockNotif(myId, pos) {
@@ -770,7 +771,10 @@ function updateBrainrots(myId, spawnAt) {
         let b = brainrots[bNum];
         if (!b) { continue; }
 
+
         let [x, y, z] = (spawnAt[bNum] ?? [0, 0, 0]);
+
+        //api.log(`Spawning at ${[x, y, z]}`)
 
         //api.log(b.id);
         let brainrotConfig = getBrainrotById(b.id);
@@ -797,6 +801,8 @@ function updateBrainrots(myId, spawnAt) {
                 { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   Coins per Second: ${brainrotConfig.data.cps}` }
             ]
         });
+        api.setPosition(mob, x + 0, y + 0, z + 0);
+
         stealable[myId].push(b.id);
         toHide.push({ id: mob, count: 3, pos: [x, y, z] });
         api.setMobAiState(mob, "disabled", null);
@@ -894,6 +900,9 @@ function clearRenderedBrainrots(myId) {
         //log(`${ent}`);
         if (api.getEntityType(ent) == "Mesh") { // && !api.getEntityName(e).includes("'")
             api.deleteMeshEntity(ent);
+        }
+        else {
+            try { api.despawnMob(ent); } catch { }
         }
     }
 }
