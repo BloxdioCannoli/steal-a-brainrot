@@ -1,4 +1,5 @@
-//update: aaaa
+//update: aaaaaaaaa
+
 /*
 TODO:
 
@@ -11,9 +12,20 @@ TODO:
 - invis solid not removed when a player leaves with an active base lock
 
 BUGS:
+- Brainrots not being able to be claimed at a certain point (should be fixed, not super tested yet)
 
+==
+- Hitbox NPCs (set to zombies now to distinguish) appear at the brainrot spawn pos
+notes:
+- should be disabled
+- STARTS APPEARING ON:
+when there are 3 brainrots // also spawns an additional zombie at the player's base
+==
 */
 
+let oldCoins = {};
+
+let updateSidebar = {};
 let toHide = [];
 let stealable = {};
 
@@ -88,6 +100,7 @@ basesConfig = [
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     //api.log("damage detected");
     let ownedBrainrots = getBrainrots(myId);
+    if (ownedBrainrots.length - 1 >= maxBrainrots) { api.sendMessage(myId, [{ str: "You have too many brainrots!" }]); return "preventChange"; }
 
     let mob = "undecided";
     for (let m of mobs) {
@@ -130,7 +143,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 
         updateBrainrots(myId, base.brainrotPlatforms);
     } else {
-        api.sendMessage(myId, [{ str: "You have too many brainrots!" }]);
+
     }
 
     return "preventDamage";
@@ -336,7 +349,8 @@ let consec = 0; let wait = 0; function tick() {
 
             hasspawnedmesh = true;
         }
-        // world tick
+
+        // full world tick
         if (tickNum >= startWorldTickAt) {
             if (tickNum % (spawnFreq) == 1) {
                 let [x, y, z] = brainrotSpawnPos;
@@ -371,7 +385,7 @@ let consec = 0; let wait = 0; function tick() {
                 let mesh = mobs[mNum].mesh;
                 api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
                 if (mobs[mNum].invisibleCount > 0) {
-                   // api.applyEffect(m, "Invisible", null, {});
+                    // api.applyEffect(m, "Invisible", null, {});
                     if (mobs[mNum].invisibleCount <= 1) {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     }
@@ -387,6 +401,8 @@ let consec = 0; let wait = 0; function tick() {
         // player tick
         pId = players[pNum];
 
+        let coins = api.getPlayerDbValue(pId, "coins");
+
         if (lockedBases[pId]) {
             if (lockedBases[pId] <= api.now()) {
                 setBaseLockedState(pId, "unlocked");
@@ -394,11 +410,49 @@ let consec = 0; let wait = 0; function tick() {
             }
             updateBaseNametag(pId);
         }
+
+        if (updateSidebar[pId]) {
+            api.setClientOption(pId, "RightInfoText", [
+                { icon: "Stick", style: { fontSize: "35px" } },
+                { str: " Steal a Brainrot", style: { fontSize: "30px", fontWeight: "800", color: "#f5492f" } },
+                { str: " ", style: { fontSize: "10px" } },
+                { icon: "Rotten Brain", style: { fontSize: "35px" } },
+                { str: "\n" },
+
+                { icon: "Gold Trophy", style: { fontSize: "35px" } },
+                { str: "Owned by ", style: { fontSize: "18px", fontWeight: "600", color: "#ebd510", fontStyle: "italic" } },
+                { str: "JavisthejavisYT\n", style: { fontSize: "18px", fontWeight: "700", color: "#ebd510", fontStyle: "italic" } },
+
+                { icon: "Code Block", style: { fontSize: "35px" } },
+                { str: "Coding by ", style: { fontSize: "18px", fontWeight: "600", color: "#eb9310", fontStyle: "italic" } },
+                { str: "Bloxdio Cannoli on YT\n", style: { fontSize: "18px", fontWeight: "700", color: "#eb9310", fontStyle: "italic" } },
+
+                { icon: "Block of Gold", style: { fontSize: "35px" } },
+                { str: "Building by ", style: { fontSize: "18px", fontWeight: "600", color: "#10b4eb", fontStyle: "italic" } },
+                { str: "SKY_SPIRIT", style: { fontSize: "18px", fontWeight: "700", color: "#10b4eb", fontStyle: "italic" } },
+            ]);
+            updateSidebar[pId] = false;
+        }
+
+        let invenCoins = api.getInventoryItemAmount(pId, "Gold Coin");
+        if (invenCoins > 0) {
+            api.removeItemName(pId, "Gold Coin", invenCoins);
+            coins += invenCoins;
+        }
+
+        if (coins != oldCoins[pId]) {
+            api.setPlayerDbValue(pId, "coins", coins);
+            api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
+        }
+
+        oldCoins[pId] = coins;
     }
 }
 
 function onPlayerAltAction(myId, x, y, z, block, targetEId) {
     let [lx, ly, lz] = bases[myId].lockPos;
+
+    if (block == "Bin") { api.setPlayerDbValue(myId, "coins", 0); return }
 
     if (x == lx && y == ly && z == lz) {
         if (!lockedBases[myId]) {
@@ -429,13 +483,23 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
+    let coins = api.getPlayerDbValue(myId, "coins");
+    if (!coins) {
+        api.setPlayerDbValue(myId, "coins", 0);
+    }
+    updateSidebar[myId] = true;
+
+    let username = api.getEntityName(myId);
+    if (username == "JavisthejavisYT") { // reset people with older versions of DB
+        api.deletePlayerDbValue(myId, "brainrots");
+    }
     attemptInitBrainrotDb(myId);
 
     api.setWalkThroughType(myId, "Pink Portal");
     api.setMaxPlayers(8, 8);
     api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
 
-    let username = api.getEntityName(myId);
+
     let freeBaseIdx = getFreeBase();
     baseNum[myId] = freeBaseIdx;
     bases[myId] = { ...basesConfig[freeBaseIdx] }; bases[myId].idx = freeBaseIdx;
@@ -470,7 +534,7 @@ function onPlayerJoin(myId) {
 
 function onWorldAttemptDespawnMob(mobId) {
     let type = api.getEntityType(mobId);
-    api.log(`Attempted to despawn ${type}`);
+    //api.log(`Attempted to despawn ${type}`);
     for (let m of mobs) {
         if (m.id == mobId) { return "preventDespawn"; }
     }
@@ -702,7 +766,7 @@ function updateBrainrots(myId, spawnAt) {
             autoRotate: true,
 
             blockName: (brainrotConfig.displayName ?? brainrotConfig.blockName),
-            hideDist: 250,
+            hideDist: 25,
         });
         api.setPosition(mesh, x + 0, y + 0, z + 0);
 
@@ -724,7 +788,7 @@ function updateBrainrots(myId, spawnAt) {
     }
 }
 
-function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
+function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 250) {
     api.setMobAiState(mob, "walkingToPosition", { pos: brainrotDeathPos });
 
     let mesh = api.attemptCreateMeshEntity(brainrotData.meshType, {
@@ -732,7 +796,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z) {
         autoRotate: true,
 
         blockName: (brainrotData.displayName ?? brainrotData.blockName),
-        hideDist: 250,
+        hideDist: hideDist,
     });
     api.setPosition(mesh, x, y, z);
 
