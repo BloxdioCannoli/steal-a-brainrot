@@ -289,8 +289,8 @@ let consec = 0; let wait = 0; function tick() {
                     }
                     api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     api.setPosition(m, [x, y, z]);
-                    let effects=api.getEffects(m);
-                    api.log(effects)
+                    let effects = api.getEffects(m);
+                    //api.log(effects)
                     toHide.splice(h, 1);
                     //api.log(`toHide element at ${[x, y, z]} found`)
                 } else {
@@ -669,8 +669,8 @@ function createLaser(x, y, z, height = 5) {
 
 function removeLaser(x, y, z) {
     for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
-    let type = api.getEntityType(e);
-    
+        let type = api.getEntityType(e);
+
         if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
     }
 }
@@ -809,7 +809,7 @@ function updateBrainrots(myId, spawnAt) {
 
         stealable[myId].push(b.id);
         toHide.push({ id: mob, count: 1, pos: [x, y, z] });
-        api.log(`Pushed to toHide`)
+        api.log(`Pushed to toHide`);
         api.setMobAiState(mob, "disabled", null);
     }
 }
