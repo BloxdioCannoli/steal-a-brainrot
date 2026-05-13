@@ -1,4 +1,4 @@
-//update: a
+//update: aaa
 
 /*
 TODO:
@@ -132,8 +132,8 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         api.despawnMob(mobId);
 
         let base = bases[myId];
+        
         clearRenderedBrainrots(myId);
-
         updateBrainrots(myId, base.brainrotPlatforms);
     } else {
 
@@ -902,8 +902,9 @@ function clearRenderedBrainrots(myId) {
     let [x1, y1, z1] = base.borders[0];
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
-        //log(`${ent}`);
-        if (api.getEntityType(ent) == "Mesh") { // && !api.getEntityName(e).includes("'")
+        let name=api.getEntityName(ent);
+        //log(`${name}`);
+        if (api.getEntityType(ent) == "Mesh" && !api.getEntityName(ent).includes("'")) {
             api.deleteMeshEntity(ent);
         }
         else {
