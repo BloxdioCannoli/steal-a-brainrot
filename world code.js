@@ -809,7 +809,7 @@ function updateBrainrots(myId, spawnAt) {
 
         stealable[myId].push(b.id);
         toHide.push({ id: mob, count: 10, pos: [x, y, z] });
-        api.log(`Pushed to toHide`);
+        //api.log(`Pushed to toHide`);
         api.setMobAiState(mob, "disabled", null);
     }
 }
