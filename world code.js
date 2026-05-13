@@ -1,4 +1,4 @@
-//update: aaaaa
+//update: aaaaaa
 
 /*
 TODO:
@@ -283,13 +283,18 @@ let consec = 0; let wait = 0; function tick() {
                 let count = h.count;
                 let [x, y, z] = h.pos;
 
+                //api.log(`toHide element at ${[x, y, z]} found`)
+
                 if (count <= 1) {
                     if (hideMobs) {
                         api.applyEffect(m, "Invisible", null, {});
                     }
                     api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                     api.setPosition(m, [x, y, z]);
+                    let effects=api.getEffects(m);
+                    api.log(effects)
                     toHide.splice(h, 1);
+                    //api.log(`toHide element at ${[x, y, z]} found`)
                 } else {
                     h.count--;
                 }
