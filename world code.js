@@ -12,9 +12,7 @@ TODO:
 - invis solid not removed when a player leaves with an active base lock
 
 BUGS:
-- Brainrots not being able to be claimed at a certain point(should be fixed, not super tested yet)
-
-- some hithoxes are not set
+- hopefully fixed hitbox bugs
 */
 
 hideMobs = true;
@@ -810,7 +808,8 @@ function updateBrainrots(myId, spawnAt) {
         api.setPosition(mob, x + 0, y + 0, z + 0);
 
         stealable[myId].push(b.id);
-        toHide.push({ id: mob, count: 3, pos: [x, y, z] });
+        toHide.push({ id: mob, count: 1, pos: [x, y, z] });
+        api.log(`Pushed to toHide`)
         api.setMobAiState(mob, "disabled", null);
     }
 }
