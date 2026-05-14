@@ -1,4 +1,4 @@
-//update: aa
+//update: a
 
 /*
 TODO:
@@ -12,7 +12,7 @@ TODO:
 
 - for tick() when forcing onPlayerJoin, check if any generated entities exist before re-generating
 - look into doing claiming with collisions
-- remove the base nametags of players who left
+- players who leave when initializing or in some other cases break the code forever
 
 BUGS:
 - hopefully fixed hitbox bugs
