@@ -1,4 +1,4 @@
-//update: aaaaa
+//update: aa
 
 /*
 TODO:
@@ -9,14 +9,21 @@ TODO:
 - claiming what brainrots earned you
 - invis solid not removed when a player leaves with an active base lock
 
+
+- look into doing claiming with collisions
+
 BUGS:
 - hopefully fixed hitbox bugs
 */
+
+admin = ["WanderingCannoli", "JavisthejavisYT", "SKY_SPIRIT", "SAD_SKY_SPIRIT"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
     luck: [-979, -992, -1045],
 };
+
+shouldRunPlayerJoin = {};
 
 hideMobs = true;
 let oldCoins = {};
@@ -297,7 +304,7 @@ let consec = 0; let wait = 0; function tick() {
         }
         if (!hasspawnedmesh) {
             create3dText();
-            
+
             let [lx, ly, lz] = lavaPos;
 
             let mesh = api.attemptCreateMeshEntity("Box", {
@@ -402,6 +409,8 @@ let consec = 0; let wait = 0; function tick() {
         // player tick
         pId = players[pNum];
 
+        if (shouldRunPlayerJoin[pId]) { runPlayerJoin(myId) ;}
+
         let coins = api.getPlayerDbValue(pId, "coins");
 
         if (lockedBases[pId]) {
@@ -439,6 +448,12 @@ let consec = 0; let wait = 0; function tick() {
         if (invenCoins > 0) {
             api.removeItemName(pId, "Gold Coin", invenCoins);
             coins += invenCoins;
+        }
+
+        let invenFrags = api.getInventoryItemAmount(pId, "Gold Fragment");
+        if (invenFrags > 0) {
+            api.removeItemName(pId, "Gold Fragment", invenFrags);
+            coins -= invenFrags;
         }
 
         if (coins != oldCoins[pId]) {
@@ -488,8 +503,13 @@ function onPlayerLeave(myId) {
     delete stealable[myId];
 }
 
-function onPlayerJoin(myId) {
-    api.setCantChangeBlockType(myId, "Invisible Solid");
+function runPlayerJoin(myId) {
+    api.setItemStat(myId, "Gold Coin", "displayName", "+ Coins");
+    api.setItemStat(myId, "Gold Coin", "description", "Get coins for each of this item you pick up.");
+
+    api.setItemStat(myId, "Gold Fragment", "displayName", "- Coins");
+    api.setItemStat(myId, "Gold Fragment", "description", "Lose coins for each of this item you pick up.");
+
     let coins = api.getPlayerDbValue(myId, "coins");
     if (!coins) {
         api.setPlayerDbValue(myId, "coins", 0);
@@ -512,6 +532,13 @@ function onPlayerJoin(myId) {
     let username = api.getEntityName(myId);
     if (username == "JavisthejavisYT") { // reset people with older versions of DB
         api.deletePlayerDbValue(myId, "brainrots");
+    }
+    if (!admin.includes(username)) {
+        api.setCantChangeBlockType(myId, "Invisible Solid");
+        api.setWalkThroughType(myId, "Invisible Solid", true);
+    } else {
+        api.setCanChangeBlockType(myId, "Invisible Solid");
+        api.setWalkThroughType(myId, "Invisible Solid", false);
     }
     attemptInitBrainrotDb(myId);
 
@@ -549,6 +576,11 @@ function onPlayerJoin(myId) {
     createLockNotif(myId, base.lockPos);
 
     //api.setPosition(myId, bases[myId].spawnPos);
+    delete shouldRunPlayerJoin[myId];
+}
+function onPlayerJoin(myId) {
+    shouldRunPlayerJoin[myId] = true;
+    runPlayerJoin(myId);
 }
 
 function onWorldAttemptDespawnMob(mobId) {
@@ -918,11 +950,12 @@ function create3dText() {
     let text = api.attemptCreateMeshEntity("BloxdBlock", {
         size: 1,
         blockName: "Invisible Solid",
+        hideDist: 1000,
     });
 
     api.setTargetedPlayerSettingForEveryone(text, "nameTagInfo", {
         content: [
-            { str: "Rebirth", style: { fontSize: "100px" } }
+            { str: "Rebirth", style: { fontSize: "100px", color: "#1052eb" } }
         ], backgroundColor: "rgba(0,0,0,0)",
         subtitle: [
             { str: "(Not yet added)" }
@@ -938,11 +971,12 @@ function create3dText() {
     let text1 = api.attemptCreateMeshEntity("BloxdBlock", {
         size: 1,
         blockName: "Invisible Solid",
+        hideDist: 1000,
     });
 
     api.setTargetedPlayerSettingForEveryone(text1, "nameTagInfo", {
         content: [
-            { str: "Server Luck", style: { fontSize: "100px" } }
+            { str: "Server Luck", style: { fontSize: "100px", color: "#ebc310" } }
         ], backgroundColor: "rgba(0,0,0,0)",
         subtitle: [
             { str: "(Not yet added)" }
