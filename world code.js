@@ -1,10 +1,8 @@
-//update: aaa
+//update: aaaaa
 
 /*
 TODO:
 
-- properly clear brainrots onUpdate
-- sidebar
 - stealing brainrots from other players
 - purchasing brainrots
 - selling brainrots
@@ -14,6 +12,11 @@ TODO:
 BUGS:
 - hopefully fixed hitbox bugs
 */
+
+customText = {
+    rebirth: [-1010, -997, -1027],
+    luck: [-979, -992, -1045],
+};
 
 hideMobs = true;
 let oldCoins = {};
@@ -100,13 +103,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         if (m.id == mobId) { mob = m; }
     }
     if (mob == "undecided") {
-        let stealable = false;
-        for (let playerId in stealable) {
-            for (let id of stealable[playerId]) {
-                if (id == mobId || id.id == mobId) { stealable = true; }
-            }
-        }
-        if (!stealable) { api.despawnMob(mobId); return "preventDamage"; } else {
+        if (!stealable[myId].includes(mobId)) { api.despawnMob(mobId); return "preventDamage"; } else {
             api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
             return "preventDamage";
         }
@@ -132,7 +129,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         api.despawnMob(mobId);
 
         let base = bases[myId];
-        
+
         clearRenderedBrainrots(myId);
         updateBrainrots(myId, base.brainrotPlatforms);
     } else {
@@ -299,6 +296,8 @@ let consec = 0; let wait = 0; function tick() {
             }
         }
         if (!hasspawnedmesh) {
+            create3dText();
+            
             let [lx, ly, lz] = lavaPos;
 
             let mesh = api.attemptCreateMeshEntity("Box", {
@@ -490,6 +489,7 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
+    api.setCantChangeBlockType(myId, "Invisible Solid");
     let coins = api.getPlayerDbValue(myId, "coins");
     if (!coins) {
         api.setPlayerDbValue(myId, "coins", 0);
@@ -720,7 +720,7 @@ function setBaseLockedState(myId, type = "locked") {
             let [olx, oy, oz] = laser;
 
             removeLaser(olx, oy, oz);
-            api.setBlockRect([olx, oy + 1, oz], [olx, oy + 3, oz, "Air"]);
+            api.setBlockRect([olx, oy + 1, oz], [olx, oy + 3, oz], "Air");
         }
     }
 };
@@ -788,7 +788,7 @@ function updateBrainrots(myId, spawnAt) {
             size: brainrotConfig.size,
             autoRotate: true,
 
-            blockName: (brainrotConfig.displayName ?? brainrotConfig.blockName),
+            blockName: (brainrotConfig.blockName),
             hideDist: 25,
         });
         api.setPosition(mesh, x + 0, y + 0, z + 0);
@@ -798,7 +798,7 @@ function updateBrainrots(myId, spawnAt) {
         //api.log(`Called updateBrainrots`)
         api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
             content: [
-                { str: `${brainrotConfig.blockName.replace(" Statue", "")}`, style: { fontSize: "85px", color: rarityColors[rarityName] } }
+                { str: `${brainrotConfig.displayName ?? (brainrotConfig.blockName.replace(" Statue", ""))}`, style: { fontSize: "85px", color: rarityColors[rarityName] } }
             ], backgroundColor: "rgba(0,0,0,0)",
 
             subtitle: [
@@ -807,7 +807,7 @@ function updateBrainrots(myId, spawnAt) {
         });
         api.setPosition(mob, x + 0, y + 0, z + 0);
 
-        stealable[myId].push(b.id);
+        stealable[myId].push(mob);
         toHide.push({ id: mob, count: 10, pos: [x, y, z] });
         //api.log(`Pushed to toHide`);
         api.setMobAiState(mob, "disabled", null);
@@ -902,13 +902,54 @@ function clearRenderedBrainrots(myId) {
     let [x1, y1, z1] = base.borders[0];
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
-        let name=api.getEntityName(ent);
+        let name = api.getEntityName(ent);
         //log(`${name}`);
-        if (api.getEntityType(ent) == "Mesh" && !api.getEntityName(ent).includes("'")) {
+        if (api.getEntityType(ent) == "Mesh" && !name.includes("'") && !name.includes(`laser`)) {
             api.deleteMeshEntity(ent);
         }
         else {
             try { api.despawnMob(ent); } catch { }
         }
     }
+}
+
+function create3dText() {
+    // Rebirth
+    let text = api.attemptCreateMeshEntity("BloxdBlock", {
+        size: 1,
+        blockName: "Invisible Solid",
+    });
+
+    api.setTargetedPlayerSettingForEveryone(text, "nameTagInfo", {
+        content: [
+            { str: "Rebirth", style: { fontSize: "100px" } }
+        ], backgroundColor: "rgba(0,0,0,0)",
+        subtitle: [
+            { str: "(Not yet added)" }
+        ]
+    });
+    api.setTargetedPlayerSettingForEveryone(text, "hasPriorityNametag", true);
+
+    let [x, y, z] = customText.rebirth;
+    api.setPosition(text, [x + 0.5, y, z + 0.5]);
+
+    // Server Luck
+
+    let text1 = api.attemptCreateMeshEntity("BloxdBlock", {
+        size: 1,
+        blockName: "Invisible Solid",
+    });
+
+    api.setTargetedPlayerSettingForEveryone(text1, "nameTagInfo", {
+        content: [
+            { str: "Server Luck", style: { fontSize: "100px" } }
+        ], backgroundColor: "rgba(0,0,0,0)",
+        subtitle: [
+            { str: "(Not yet added)" }
+        ]
+    });
+    api.setTargetedPlayerSettingForEveryone(text1, "hasPriorityNametag", true);
+
+    let [x1, y1, z1] = customText.luck;
+    api.setPosition(text1, [x1 + 0.5, y1, z1 + 0.5]);
 }
