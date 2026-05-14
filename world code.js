@@ -412,6 +412,14 @@ let consec = 0; let wait = 0; function tick() {
         // player tick
         pId = players[pNum];
 
+        let exists = true;
+        try {
+            if (!api.isAlive(myId)) {
+                exists = false;
+            }
+        } catch { exists = false; }
+        if (!exists) { return; }
+
         if (shouldRunPlayerJoin[pId]) { runPlayerJoin(pId); }
 
         let coins = api.getPlayerDbValue(pId, "coins");
@@ -500,10 +508,10 @@ function onPlayerLeave(myId) {
     let idx = baseNum[myId];
     clearEntireRenderedBase(myId);
 
-    delete bases[myId];
-    delete lockTime[myId];
-    delete lockedBases[myId];
-    delete stealable[myId];
+    if (bases[myId]) { delete bases[myId]; }
+    if (lockTime[myId]) { delete lockTime[myId]; }
+    if (lockedBases[myId]) { delete lockedBases[myId]; }
+    if (stealable[myId]) { delete stealable[myId]; }
 }
 
 function runPlayerJoin(myId) {
@@ -1015,7 +1023,7 @@ function create3dText() {
 
     api.setTargetedPlayerSettingForEveryone(text2, "nameTagInfo", {
         content: [
-            { str: "Merge", style: { fontSize: "100px", color: "#ebc310" } }
+            { str: "Merge", style: { fontSize: "100px", color: "#eb1097" } }
         ], backgroundColor: "rgba(0,0,0,0)",
         subtitle: [
             { str: "(Not yet added)" }
