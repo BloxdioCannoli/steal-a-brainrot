@@ -1,4 +1,4 @@
-//update: aa
+//update: aaa
 
 /*
 TODO:
@@ -10,13 +10,14 @@ TODO:
 - invis solid not removed when a player leaves with an active base lock
 
 
+- for tick() when forcing onPlayerJoin, check if any generated entities exist before re-generating
 - look into doing claiming with collisions
 
 BUGS:
 - hopefully fixed hitbox bugs
 */
 
-admin = ["WanderingCannoli", "JavisthejavisYT", "SKY_SPIRIT", "SAD_SKY_SPIRIT"];
+admin = ["WanderingCannoli", "JavisthejavisYT", "SKY_SPIRIT", "Arthur_Mom"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
@@ -409,7 +410,7 @@ let consec = 0; let wait = 0; function tick() {
         // player tick
         pId = players[pNum];
 
-        if (shouldRunPlayerJoin[pId]) { runPlayerJoin(myId) ;}
+        if (shouldRunPlayerJoin[pId]) { runPlayerJoin(pId); }
 
         let coins = api.getPlayerDbValue(pId, "coins");
 
@@ -809,6 +810,7 @@ function updateBrainrots(myId, spawnAt) {
 
 
         let [x, y, z] = (spawnAt[bNum] ?? [0, 0, 0]);
+        y -= 0.5;
 
         //api.log(`Spawning at ${[x, y, z]}`)
 
