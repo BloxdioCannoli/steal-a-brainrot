@@ -1,4 +1,4 @@
-//update: aaa
+//update: aa
 
 /*
 TODO:
@@ -12,6 +12,7 @@ TODO:
 
 - for tick() when forcing onPlayerJoin, check if any generated entities exist before re-generating
 - look into doing claiming with collisions
+- remove the base nametags of players who left
 
 BUGS:
 - hopefully fixed hitbox bugs
@@ -22,6 +23,7 @@ admin = ["WanderingCannoli", "JavisthejavisYT", "SKY_SPIRIT", "Arthur_Mom"];
 customText = {
     rebirth: [-1010, -997, -1027],
     luck: [-979, -992, -1045],
+    merge: [-998, -996, -1038],
 };
 
 shouldRunPlayerJoin = {};
@@ -233,7 +235,7 @@ brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
 
 let spawnFreq = 23;
-const maxConsec = 2;
+const maxConsec = 1;
 const waitNum = 5;
 
 maxBrainrots = 12; // real max: 12
@@ -496,7 +498,7 @@ function onPlayerAltAction(myId, x, y, z, block, targetEId) {
 
 function onPlayerLeave(myId) {
     let idx = baseNum[myId];
-    clearRenderedBrainrots(myId);
+    clearEntireRenderedBase(myId);
 
     delete bases[myId];
     delete lockTime[myId];
@@ -947,6 +949,22 @@ function clearRenderedBrainrots(myId) {
     }
 }
 
+function clearEntireRenderedBase(myId) {
+    let base = bases[myId];
+    let [x1, y1, z1] = base.borders[0];
+    let [x2, y2, z2] = base.borders[1];
+    for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
+        let name = api.getEntityName(ent);
+        //log(`${name}`);
+        if (api.getEntityType(ent) == "Mesh") {
+            api.deleteMeshEntity(ent);
+        }
+        else {
+            try { api.despawnMob(ent); } catch { }
+        }
+    }
+}
+
 function create3dText() {
     // Rebirth
     let text = api.attemptCreateMeshEntity("BloxdBlock", {
@@ -963,13 +981,12 @@ function create3dText() {
             { str: "(Not yet added)" }
         ]
     });
-    api.setTargetedPlayerSettingForEveryone(text, "hasPriorityNametag", true);
+    //api.setTargetedPlayerSettingForEveryone(text, "hasPriorityNametag", true);
 
     let [x, y, z] = customText.rebirth;
     api.setPosition(text, [x + 0.5, y, z + 0.5]);
 
     // Server Luck
-
     let text1 = api.attemptCreateMeshEntity("BloxdBlock", {
         size: 1,
         blockName: "Invisible Solid",
@@ -984,8 +1001,28 @@ function create3dText() {
             { str: "(Not yet added)" }
         ]
     });
-    api.setTargetedPlayerSettingForEveryone(text1, "hasPriorityNametag", true);
+    //api.setTargetedPlayerSettingForEveryone(text1, "hasPriorityNametag", true);
 
     let [x1, y1, z1] = customText.luck;
     api.setPosition(text1, [x1 + 0.5, y1, z1 + 0.5]);
+
+    // Merge Machine
+    let text2 = api.attemptCreateMeshEntity("BloxdBlock", {
+        size: 1,
+        blockName: "Invisible Solid",
+        hideDist: 1000,
+    });
+
+    api.setTargetedPlayerSettingForEveryone(text2, "nameTagInfo", {
+        content: [
+            { str: "Merge", style: { fontSize: "100px", color: "#ebc310" } }
+        ], backgroundColor: "rgba(0,0,0,0)",
+        subtitle: [
+            { str: "(Not yet added)" }
+        ]
+    });
+    //api.setTargetedPlayerSettingForEveryone(text2, "hasPriorityNametag", true);
+
+    let [x2, y2, z2] = customText.merge;
+    api.setPosition(text2, [x2 + 0.5, y2, z2 + 0.5]);
 }
