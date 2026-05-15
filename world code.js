@@ -1,4 +1,4 @@
-//update: aaa
+//update: aaaaa
 
 /*
 === TODO ===
@@ -31,8 +31,15 @@ Failed steal:
 === Important Helper Functions ===
 
 - Deleting brainrots from player DB
-- 
+
+
+=== BUGS ===
+
+- some brainrot mesh not being removed
+- ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
+
+playerBrainrotIds = {};
 
 hasSetMax = false;
 playerJoinLevel = {};
@@ -242,6 +249,12 @@ function setBrainrots(myId, brainrots) {
 
     let value = serialized.join(dbListSeparator);
     api.setPlayerDbValue(myId, "brainrots", value);
+}
+
+function removeBrainrot(myId, idx) {
+    let brainrots = getBrainrots(myId);
+    brainrots[idx] = null;
+    setBrainrots(myId, brainrots);
 }
 
 function setBrainrot(myId, idx, brainrot) {
@@ -536,8 +549,7 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
-    shouldRunPlayerJoin[myId] = true;
-    runPlayerJoin(myId);
+    beginRunPlayerJoin(myId);
 }
 function runPlayerJoin(myId, adminOverride = null) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
@@ -546,9 +558,8 @@ function runPlayerJoin(myId, adminOverride = null) {
 
     if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
 
-    //api.log(playerJoinLevel[myId])
-    if (playerJoinLevel[myId] <= 0) {
-        //api.setPosition(myId, bases[myId].spawnPos);
+    if (playerJoinLevel[myId] <= 0) {// client-side setup
+        //api.setPosition(myId, bases[myId].spawnPos); // <= uncomment on publish
 
         setLightingMode(myId, enableLighting);
 
@@ -602,23 +613,26 @@ function runPlayerJoin(myId, adminOverride = null) {
         playerJoinLevel[myId]++;
     }
 
-    if (playerJoinLevel[myId] <= 1) {
+    if (playerJoinLevel[myId] <= 1) { // database and object setup
         let coins = api.getPlayerDbValue(myId, "coins");
         if (!coins) {
             api.setPlayerDbValue(myId, "coins", 0);
         }
+        playerBrainrotIds[myId] = {};
+        updateSidebar[myId] = true;
+        lockTime[myId] = defLockTime;
 
         playerJoinLevel[myId]++;
     }
 
-    if (playerJoinLevel[myId] <= 2) {
+    if (playerJoinLevel[myId] <= 2) { // brainrot init
         attemptInitBrainrotDb(myId);
 
         playerJoinLevel[myId]++;
     }
 
 
-    if (playerJoinLevel[myId] <= 3) {
+    if (playerJoinLevel[myId] <= 3) { // base init 1
         let freeBaseIdx = getFreeBase();
         baseNum[myId] = freeBaseIdx;
         bases[myId] = { ...basesConfig[freeBaseIdx] }; bases[myId].idx = freeBaseIdx;
@@ -627,7 +641,7 @@ function runPlayerJoin(myId, adminOverride = null) {
     }
     let base = bases[myId];
 
-    if (playerJoinLevel[myId] <= 4) {
+    if (playerJoinLevel[myId] <= 4) { // client-side base setup
         let lsp = base.laserStartPos;
         api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
 
@@ -640,7 +654,7 @@ function runPlayerJoin(myId, adminOverride = null) {
         playerJoinLevel[myId]++;
     }
 
-    if (playerJoinLevel[myId] <= 5) {
+    if (playerJoinLevel[myId] <= 5) { // base init 2
         updateBrainrots(myId, base.brainrotPlatforms);
         nametag = api.attemptCreateMeshEntity("BloxdBlock", {
             blockName: "Invisible Solid",
@@ -655,11 +669,6 @@ function runPlayerJoin(myId, adminOverride = null) {
         playerJoinLevel[myId]++;
     }
 
-    if (playerJoinLevel[myId] <= 6) {
-        lockTime[myId] = defLockTime;
-
-        playerJoinLevel[myId]++;
-    }
     delete shouldRunPlayerJoin[myId];
 }
 
@@ -920,6 +929,7 @@ function updateBrainrots(myId, spawnAt) {
         });
         api.setPosition(mob, x + 0, y + 0, z + 0);
 
+        playerBrainrotIds[myId][mob] = { idx: bNum };
         stealable[myId].push(mob);
         toHide.push({ id: mob, count: 10, pos: [x, y, z] });
         //api.log(`Pushed to toHide`);
@@ -1117,4 +1127,30 @@ function setLightingMode(myId, on = true) {
             "ambientLightColourOverride": null
         });
     }
+}
+
+function beginRunPlayerJoin(myId, adminOverride = null) {
+    playerJoinLevel[myId] = 0;
+    shouldRunPlayerJoin[myId] = true;
+    runPlayerJoin(myId, null);
+}
+
+function removeBrainrotStealingEffect(myId) {
+    api.setPlayerPose(myId, "standing");
+    api.updateEntityNodeMeshAttachment(myId, "ArmLeftMesh", null);
+
+    api.removeEffect(myId, "stealingBrainrot");
+    api.removeEffect(myId, "Slowness");
+}
+
+function showBrainrotStealingEffect(myId, brainrotName = "67 Statue") {
+    api.setPlayerPose(myId, "zombie");
+    api.updateEntityNodeMeshAttachment(myId, "ArmLeftMesh", "BloxdBlock", {
+        autoRotate: true,
+        size: 0.5,
+        blockName: brainrotName,
+    }, [-0.3, -0.5, -0.15], [1.5, 0, 0]);
+
+    api.applyEffect(myId, "stealingBrainrot", null, { icon: "Thief", displayName: `Stealing: ${brainrotName.replace("Statue", "")}` });
+    api.applyEffect(myId, "Slowness", 0, { inbuiltLevel: 3 });
 }
