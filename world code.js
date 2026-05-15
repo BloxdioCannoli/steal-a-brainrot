@@ -1,4 +1,4 @@
-//update: aaaaa
+//update: a
 
 /*
 === TODO ===
@@ -38,6 +38,25 @@ Failed steal:
 - some brainrot mesh not being removed
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
+
+function canHit(myId) {
+    return !api.hasEffect(myId, "Hit cooldown");
+}
+function applyHitCooldown(myId) {
+    api.applyEffect(myId, "Hit cooldown", 5000, { displayName: "Hit cooldown", icon: "Fist" });
+}
+
+function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
+    if (!canHit(myId)) {
+        api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
+        return "preventDamage";
+    } else {
+        api.setHealth(damagedPlayer, 100);
+        applyHitCooldown(myId);
+    }
+}
+
+disableAdminMode = false;
 
 playerBrainrotIds = {};
 
@@ -549,7 +568,9 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
-    beginRunPlayerJoin(myId);
+    let adminOverride = disableAdminMode;
+    if (adminOverride != true) { adminOverride = null; }
+    beginRunPlayerJoin(myId, adminOverride);
 }
 function runPlayerJoin(myId, adminOverride = null) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
@@ -577,20 +598,11 @@ function runPlayerJoin(myId, adminOverride = null) {
                 },
             },
             cantChangeError: [],
+            
         });
 
         let isAdmin = adminOverride ?? admin.includes(username);
-        if (!isAdmin) {
-            api.setCantChangeBlockType(myId, "Invisible Solid");
-            api.setWalkThroughType(myId, "Invisible Solid", true);
-            api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
-
-            api.setClientOptions(myId, {
-                canChange: false,
-                useFullInventory: false,
-                inventoryItemsMoveable: false,
-            });
-        } else {
+        if (isAdmin) {
             api.setCanChangeBlockType(myId, "Invisible Solid");
             api.setWalkThroughType(myId, "Invisible Solid", false);
             api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 2);
@@ -599,7 +611,22 @@ function runPlayerJoin(myId, adminOverride = null) {
                 canChange: true,
                 useFullInventory: true,
                 inventoryItemsMoveable: true,
+                 maxHealth: null,
             });
+            api.setHealth(myId, null);
+        } else {
+            api.setCantChangeBlockType(myId, "Invisible Solid");
+            api.setWalkThroughType(myId, "Invisible Solid", true);
+            api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
+
+            api.setClientOptions(myId, {
+                canChange: false,
+                useFullInventory: false,
+                inventoryItemsMoveable: false,
+                creative: false,
+                maxHealth: 100,
+            });
+            api.setHealth(myId, 100);
         }
 
         api.setWalkThroughType(myId, "Pink Portal");
@@ -1132,7 +1159,7 @@ function setLightingMode(myId, on = true) {
 function beginRunPlayerJoin(myId, adminOverride = null) {
     playerJoinLevel[myId] = 0;
     shouldRunPlayerJoin[myId] = true;
-    runPlayerJoin(myId, null);
+    runPlayerJoin(myId, adminOverride);
 }
 
 function removeBrainrotStealingEffect(myId) {
