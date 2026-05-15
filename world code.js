@@ -40,6 +40,8 @@ Failed steal:
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
 
+oldPlayers=[];
+
 function canHit(myId) {
     return !api.hasEffect(myId, "Hit cooldown");
 }
@@ -332,6 +334,14 @@ let consec = 0; let wait = 0; function tick() {
     pNum = (pNum + 1) % (players.length + 1);
     tickNum++;
 
+    if (oldPlayers!=players) {
+        for (let p of oldPlayers) {
+            if (!players.includes(p)) {
+                beginRunPlayerJoin(myId)
+            }
+        }
+    }
+
     if (pNum == players.length) {
         // world tick
         if (toHide.length > 0) {
@@ -571,13 +581,11 @@ function onPlayerLeave(myId) {
 function onPlayerJoin(myId) {
     let username = api.getEntityName(myId);
 
-    if (!admin.includes(username)) { api.kickPlayer(myId, "Whitelisted"); }
+    if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
 
-    //let adminOverride = disableAdminMode;
-    //if (adminOverride != true) { adminOverride = null; }
-    //beginRunPlayerJoin(myId, adminOverride);
+    beginRunPlayerJoin(myId);
 }
-function runPlayerJoin(myId, adminOverride = null) {
+function runPlayerJoin(myId) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
 
     let username = api.getEntityName(myId);
@@ -622,7 +630,7 @@ function runPlayerJoin(myId, adminOverride = null) {
             });
         }
 
-        let isAdmin = adminOverride ?? admin.includes(username);
+        let isAdmin = admin.includes(username);
         if (isAdmin) {
             api.setCanChangeBlockType(myId, "Invisible Solid");
             api.setWalkThroughType(myId, "Invisible Solid", false);
@@ -1177,10 +1185,10 @@ function setLightingMode(myId, on = true) {
     }
 }
 
-function beginRunPlayerJoin(myId, adminOverride = null) {
+function beginRunPlayerJoin(myId) {
     playerJoinLevel[myId] = 0;
     shouldRunPlayerJoin[myId] = true;
-    runPlayerJoin(myId, adminOverride);
+    runPlayerJoin(myId);
 }
 
 function removeBrainrotStealingEffect(myId) {
