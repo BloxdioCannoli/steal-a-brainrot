@@ -1,9 +1,23 @@
 //update: aaa
 
 /*
-TODO:
+=== TODO ===
 
-- stealing brainrots from other players
+RIGHT NOW: work on removing brainrots from db
+
+== stealing brainrots from other players ==
+General:
+- Store the claimable coins somewhere else during steal process?
+On attempt steal:
+1. Give the player the effect and display of holding a brainrot
+2. Remove the brainrot from the player's database (re-add if the thief leaves)
+Succesful steal:
+1. Add the brainrot to the thief's database and re-render
+2. Remove the effect and display
+Failed steal:
+1. Re-add the brainrot to the owner's DB
+2. Remove the effect and display
+
 - purchasing brainrots
 - selling brainrots
 - claiming what brainrots earned you
@@ -14,8 +28,10 @@ TODO:
 - look into doing claiming with collisions
 - players who leave when initializing or in some other cases break the code forever
 
-BUGS:
-- hopefully fixed hitbox bugs
+=== Important Helper Functions ===
+
+- Deleting brainrots from player DB
+- 
 */
 
 hasSetMax = false;
