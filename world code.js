@@ -20,129 +20,6 @@ BUGS:
 
 hasSetMax = false;
 playerJoinLevel = {};
-function runPlayerJoin(myId, adminOverride = null) {
-    if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
-
-    let username = api.getEntityName(myId);
-
-    if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
-
-    //api.log(playerJoinLevel[myId])
-    if (playerJoinLevel[myId] <= 0) {
-        //api.setPosition(myId, bases[myId].spawnPos);
-
-        setLightingMode(myId, enableLighting);
-        
-        lbNameStyle = { color: "lightgray", fontWeight: "800" };
-        api.setClientOptions(myId, {
-            "lightingOverride": enableLighting,
-            "lobbyLeaderboardInfo": {
-                name: {
-                    displayName: [{ icon: "Name Tag" }, { str: "Name", style: lbNameStyle, }],
-                    sortPriority: 1,
-                },
-                coins: {
-                    displayName: [{ icon: "Gold Coin" }, { str: "Coins", style: lbNameStyle, }],
-                    sortPriority: 0,
-                },
-            },
-            cantChangeError: [],
-        });
-
-        let isAdmin = adminOverride ?? admin.includes(username);
-        if (!isAdmin) {
-            api.setCantChangeBlockType(myId, "Invisible Solid");
-            api.setWalkThroughType(myId, "Invisible Solid", true);
-            api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
-
-            api.setClientOptions(myId, {
-                canChange: false,
-                useFullInventory: false,
-                inventoryItemsMoveable: false,
-            });
-        } else {
-            api.setCanChangeBlockType(myId, "Invisible Solid");
-            api.setWalkThroughType(myId, "Invisible Solid", false);
-            api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 2);
-
-            api.setClientOptions(myId, {
-                canChange: true,
-                useFullInventory: true,
-                inventoryItemsMoveable: true,
-            });
-        }
-
-        api.setWalkThroughType(myId, "Pink Portal");
-
-        api.setItemStat(myId, "Gold Coin", "displayName", "+ Coins");
-        api.setItemStat(myId, "Gold Coin", "description", "Get coins for each of this item you pick up.");
-
-        api.setItemStat(myId, "Gold Fragment", "displayName", "- Coins");
-        api.setItemStat(myId, "Gold Fragment", "description", "Lose coins for each of this item you pick up.");
-
-        playerJoinLevel[myId]++;
-    }
-
-    if (playerJoinLevel[myId] <= 1) {
-        let coins = api.getPlayerDbValue(myId, "coins");
-        if (!coins) {
-            api.setPlayerDbValue(myId, "coins", 0);
-        }
-
-        playerJoinLevel[myId]++;
-    }
-
-    if (playerJoinLevel[myId] <= 2) {
-        attemptInitBrainrotDb(myId);
-
-        playerJoinLevel[myId]++;
-    }
-
-
-    if (playerJoinLevel[myId] <= 3) {
-        let freeBaseIdx = getFreeBase();
-        baseNum[myId] = freeBaseIdx;
-        bases[myId] = { ...basesConfig[freeBaseIdx] }; bases[myId].idx = freeBaseIdx;
-
-        playerJoinLevel[myId]++;
-    }
-    let base = bases[myId];
-
-    if (playerJoinLevel[myId] <= 4) {
-        let lsp = base.laserStartPos;
-        api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
-
-        let otherLasers = base.otherLasers;
-        for (let laser of otherLasers) {
-            let [olx, oy, oz] = laser;
-            api.setWalkThroughRect(myId, [olx, oy + 1, oz], [olx, oy + 3, oz], 1);
-        }
-
-        playerJoinLevel[myId]++;
-    }
-
-    if (playerJoinLevel[myId] <= 5) {
-        updateBrainrots(myId, base.brainrotPlatforms);
-        nametag = api.attemptCreateMeshEntity("BloxdBlock", {
-            blockName: "Invisible Solid",
-            size: 1,
-        }, `${username}'s Base`);
-        api.setPosition(nametag, bases[myId].nametagPos);
-        base.nametag = nametag;
-        updateBaseNametag(myId, true);
-
-        createLockNotif(myId, base.lockPos);
-
-        playerJoinLevel[myId]++;
-    }
-
-    if (playerJoinLevel[myId] <= 6) {
-        lockTime[myId] = defLockTime;
-
-        playerJoinLevel[myId]++;
-    }
-    delete shouldRunPlayerJoin[myId];
-}
 
 enableLighting = true;
 
@@ -645,6 +522,129 @@ function onPlayerLeave(myId) {
 function onPlayerJoin(myId) {
     shouldRunPlayerJoin[myId] = true;
     runPlayerJoin(myId);
+}
+function runPlayerJoin(myId, adminOverride = null) {
+    if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
+
+    let username = api.getEntityName(myId);
+
+    if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
+
+    //api.log(playerJoinLevel[myId])
+    if (playerJoinLevel[myId] <= 0) {
+        //api.setPosition(myId, bases[myId].spawnPos);
+
+        setLightingMode(myId, enableLighting);
+
+        lbNameStyle = { color: "lightgray", fontWeight: "800" };
+        api.setClientOptions(myId, {
+            "lightingOverride": enableLighting,
+            "lobbyLeaderboardInfo": {
+                name: {
+                    displayName: [{ icon: "Name Tag" }, { str: "Name", style: lbNameStyle, }],
+                    sortPriority: 1,
+                },
+                coins: {
+                    displayName: [{ icon: "Gold Coin" }, { str: "Coins", style: lbNameStyle, }],
+                    sortPriority: 0,
+                },
+            },
+            cantChangeError: [],
+        });
+
+        let isAdmin = adminOverride ?? admin.includes(username);
+        if (!isAdmin) {
+            api.setCantChangeBlockType(myId, "Invisible Solid");
+            api.setWalkThroughType(myId, "Invisible Solid", true);
+            api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
+
+            api.setClientOptions(myId, {
+                canChange: false,
+                useFullInventory: false,
+                inventoryItemsMoveable: false,
+            });
+        } else {
+            api.setCanChangeBlockType(myId, "Invisible Solid");
+            api.setWalkThroughType(myId, "Invisible Solid", false);
+            api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 2);
+
+            api.setClientOptions(myId, {
+                canChange: true,
+                useFullInventory: true,
+                inventoryItemsMoveable: true,
+            });
+        }
+
+        api.setWalkThroughType(myId, "Pink Portal");
+
+        api.setItemStat(myId, "Gold Coin", "displayName", "+ Coins");
+        api.setItemStat(myId, "Gold Coin", "description", "Get coins for each of this item you pick up.");
+
+        api.setItemStat(myId, "Gold Fragment", "displayName", "- Coins");
+        api.setItemStat(myId, "Gold Fragment", "description", "Lose coins for each of this item you pick up.");
+
+        playerJoinLevel[myId]++;
+    }
+
+    if (playerJoinLevel[myId] <= 1) {
+        let coins = api.getPlayerDbValue(myId, "coins");
+        if (!coins) {
+            api.setPlayerDbValue(myId, "coins", 0);
+        }
+
+        playerJoinLevel[myId]++;
+    }
+
+    if (playerJoinLevel[myId] <= 2) {
+        attemptInitBrainrotDb(myId);
+
+        playerJoinLevel[myId]++;
+    }
+
+
+    if (playerJoinLevel[myId] <= 3) {
+        let freeBaseIdx = getFreeBase();
+        baseNum[myId] = freeBaseIdx;
+        bases[myId] = { ...basesConfig[freeBaseIdx] }; bases[myId].idx = freeBaseIdx;
+
+        playerJoinLevel[myId]++;
+    }
+    let base = bases[myId];
+
+    if (playerJoinLevel[myId] <= 4) {
+        let lsp = base.laserStartPos;
+        api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
+
+        let otherLasers = base.otherLasers;
+        for (let laser of otherLasers) {
+            let [olx, oy, oz] = laser;
+            api.setWalkThroughRect(myId, [olx, oy + 1, oz], [olx, oy + 3, oz], 1);
+        }
+
+        playerJoinLevel[myId]++;
+    }
+
+    if (playerJoinLevel[myId] <= 5) {
+        updateBrainrots(myId, base.brainrotPlatforms);
+        nametag = api.attemptCreateMeshEntity("BloxdBlock", {
+            blockName: "Invisible Solid",
+            size: 1,
+        }, `${username}'s Base`);
+        api.setPosition(nametag, bases[myId].nametagPos);
+        base.nametag = nametag;
+        updateBaseNametag(myId, true);
+
+        createLockNotif(myId, base.lockPos);
+
+        playerJoinLevel[myId]++;
+    }
+
+    if (playerJoinLevel[myId] <= 6) {
+        lockTime[myId] = defLockTime;
+
+        playerJoinLevel[myId]++;
+    }
+    delete shouldRunPlayerJoin[myId];
 }
 
 function onWorldAttemptDespawnMob(mobId) {
