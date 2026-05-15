@@ -1,4 +1,4 @@
-//update: aa
+//update: aaaaaa
 
 /*
 === TODO ===
@@ -35,6 +35,7 @@ Failed steal:
 
 === BUGS ===
 
+- onPlayerJoin not fully registering
 - some brainrot mesh not being removed
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
@@ -568,9 +569,13 @@ function onPlayerLeave(myId) {
 }
 
 function onPlayerJoin(myId) {
-    let adminOverride = disableAdminMode;
-    if (adminOverride != true) { adminOverride = null; }
-    beginRunPlayerJoin(myId, adminOverride);
+    let username = api.getEntityName(myId);
+
+    if (!admin.includes(username)) { api.kickPlayer(myId, "Whitelisted"); }
+
+    //let adminOverride = disableAdminMode;
+    //if (adminOverride != true) { adminOverride = null; }
+    //beginRunPlayerJoin(myId, adminOverride);
 }
 function runPlayerJoin(myId, adminOverride = null) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
@@ -598,8 +603,24 @@ function runPlayerJoin(myId, adminOverride = null) {
                 },
             },
             cantChangeError: [],
-            
+
         });
+
+        if (enableLighting) {
+            api.setClientOptions(myId, {
+                "skyBox": {
+                    type: "earth",
+                    vertexTint: [0, 0, 0]
+                }
+            });
+        } else {
+            api.setClientOptions(myId, {
+                "skyBox": {
+                    type: "earth",
+                    //vertexTint: [0, 0, 0]
+                }
+            });
+        }
 
         let isAdmin = adminOverride ?? admin.includes(username);
         if (isAdmin) {
@@ -611,7 +632,7 @@ function runPlayerJoin(myId, adminOverride = null) {
                 canChange: true,
                 useFullInventory: true,
                 inventoryItemsMoveable: true,
-                 maxHealth: null,
+                maxHealth: null,
             });
             api.setHealth(myId, null);
         } else {
@@ -1207,4 +1228,27 @@ function stopRiding67(myId) {
 
     api.setClientOption(myId, "jumpAmount", 8);
     api.setClientOption(myId, "airJumpCount", 0);
+}
+
+function isInOwnBase(myId) {
+    let base = bases[myId];
+    let pos = api.getPosition(myId);
+
+    let isInside = isInsideCube(pos, base.borders[0], base.borders[1]);
+    return isInside;
+}
+
+function isInsideCube(pos, pos1, pos2) {
+    const [x1, y1, z1] = pos1;
+    const [x2, y2, z2] = pos2;
+    const [x, y, z] = pos;
+
+    const inX = x >= Math.min(x1, x2) && x <= Math.max(x1, x2);
+    const inY = y >= Math.min(y1, y2) && y <= Math.max(y1, y2);
+    const inZ = z >= Math.min(z1, z2) && z <= Math.max(z1, z2);
+
+    if (inX && inY && inZ) {
+        return true;
+    }
+    return false;
 }
