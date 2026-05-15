@@ -1,4 +1,4 @@
-//update: a
+//update: aa
 
 /*
 === TODO ===
@@ -1180,4 +1180,31 @@ function showBrainrotStealingEffect(myId, brainrotName = "67 Statue") {
 
     api.applyEffect(myId, "stealingBrainrot", null, { icon: "Thief", displayName: `Stealing: ${brainrotName.replace("Statue", "")}` });
     api.applyEffect(myId, "Slowness", 0, { inbuiltLevel: 3 });
+}
+
+function ride67(myId, brainrotName = "67 Statue") {
+    api.setPlayerPose(myId, "riding");
+    api.updateEntityNodeMeshAttachment(myId, "LegLeftMesh", "BloxdBlock", {
+        autoRotate: true,
+        size: 0.8,
+        blockName: "67 Statue",
+    }, [-0.1, -0.1, -0.7], [1.5, 0, 0]);
+
+    api.applyEffect(myId, "riding67", null, { icon: "Light Blue Neon", displayName: `Riding 67` });
+    api.applyEffect(myId, "Speed", 0, { inbuiltLevel: 3 });
+
+    api.setClientOption(myId, "jumpAmount", 0);
+    api.setClientOption(myId, "airJumpCount", 0);
+}
+
+function stopRiding67(myId) {
+    api.setPlayerPose(myId, "standing");
+    api.updateEntityNodeMeshAttachment(myId, "TorsoNode", null);
+    api.updateEntityNodeMeshAttachment(myId, "LegLeftMesh", null);
+
+    api.removeEffect(myId, "riding67");
+    api.removeEffect(myId, "Speed");
+
+    api.setClientOption(myId, "jumpAmount", 8);
+    api.setClientOption(myId, "airJumpCount", 0);
 }
