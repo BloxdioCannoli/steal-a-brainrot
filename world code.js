@@ -1193,22 +1193,39 @@ function beginRunPlayerJoin(myId) {
 
 function removeBrainrotStealingEffect(myId) {
     api.setPlayerPose(myId, "standing");
-    api.updateEntityNodeMeshAttachment(myId, "ArmLeftMesh", null);
+    api.updateEntityNodeMeshAttachment(myId, "HeadMesh", null);
+
+    api.setTargetedPlayerSettingForEveryone(myId, "nameTagInfo", {});
 
     api.removeEffect(myId, "stealingBrainrot");
-    api.removeEffect(myId, "Slowness");
+    api.setClientOptions(myId, {
+        "speedMultiplier": 1,
+        "jumpAmount": 8,
+    });
 }
 
 function showBrainrotStealingEffect(myId, brainrotName = "67 Statue") {
-    api.setPlayerPose(myId, "zombie");
-    api.updateEntityNodeMeshAttachment(myId, "ArmLeftMesh", "BloxdBlock", {
-        autoRotate: true,
-        size: 0.5,
-        blockName: brainrotName,
-    }, [-0.3, -0.5, -0.15], [1.5, 0, 0]);
+    let trimmedName = brainrotName.replace("Statue", "");
 
-    api.applyEffect(myId, "stealingBrainrot", null, { icon: "Thief", displayName: `Stealing: ${brainrotName.replace("Statue", "")}` });
-    api.applyEffect(myId, "Slowness", 0, { inbuiltLevel: 3 });
+    api.setPlayerPose(myId, "standing");
+    api.updateEntityNodeMeshAttachment(myId, "HeadMesh", "BloxdBlock", {
+        autoRotate: true,
+        size: 1,
+        blockName: brainrotName,
+    }, [0, 0.6, 0], [0, 0, 0]);
+
+    api.setTargetedPlayerSettingForEveryone(myId, "nameTagInfo", {
+        subtitle: [
+            { str: "Stealing " },
+            { str: `${trimmedName}`, style: { color: "lightgray" } }
+        ], subtitleBackgroundColor: "rgba(0,0,0,0)"
+    });
+
+    api.applyEffect(myId, "stealingBrainrot", null, { icon: "Thief", displayName: `Stealing: ${trimmedName}` });
+    api.setClientOptions(myId, {
+        "speedMultiplier": 0.8,
+        "jumpAmount": 4,
+    });
 }
 
 function ride67(myId, brainrotName = "67 Statue") {
