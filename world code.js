@@ -57,6 +57,12 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
             }
         }
     } else {
+        let ownedInfo = playerBrainrotIds[myId][mobId];
+        let dbIdx = ownedInfo.idx;
+        let dbValue = ownedBrainrots[dbIdx];
+        let configValue = getBrainrotById(dbValue.id);
+
+        api.log(configValue);
         api.sendMessage(myId, [{ str: "You can't interact with your own mobs right now!" }]);
         return "preventDamage";
     }
