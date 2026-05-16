@@ -1292,22 +1292,3 @@ function isInsideCube(pos, pos1, pos2) {
     }
     return false;
 }
-
-onPlayerChat = (playerId, chatMessage) => {
-    const name = api.getEntityName(playerId);
-
-    if (name === "SKY_SPIRIT") {
-        return {
-            [playerId]: {
-                prefixContent: [
-                    {
-                        text: "[Muted] ",
-                        color: "red",
-                    },
-                ],
-            },
-        };
-    }
-
-    return true;
-};
