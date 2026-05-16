@@ -81,7 +81,11 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
             removeBrainrot(myId, dbIdx);
             refreshBrainrotRender(myId);
 
-            api.sendMessage(myId, [{ str: `Sold` }]);
+            let sellValue = configValue.data.cost;
+
+            api.giveItem(myId, "Gold Coin", sellValue);
+
+            api.sendMessage(myId, [{ str: `Sold for ${sellValue} gold.` }]);
         } else {
             api.sendMessage(myId, [{ str: "Use an item on the right side of your hotbar to interact." }]);
         }
@@ -139,7 +143,7 @@ function onPlayerSelectInventorySlot(myId, idx) {
     if (actionType == "sell") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Gold Coin", style: { color: serverUiText } },
-            { str: "[UNADDED] Click on one of your brainrots to sell.", style: { color: serverUiText } },
+            { str: "Click on one of your brainrots to sell.", style: { color: serverUiText } },
             { str: "\nRemove the brainrot from your inventory and collect its value in coins.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (actionType == "upgrade") {
