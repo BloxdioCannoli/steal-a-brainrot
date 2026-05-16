@@ -60,19 +60,19 @@ function onPlayerSelectInventorySlot(myId, idx) {
     if (actionType == "sell") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Gold Coin", style: { color: serverUiText } },
-            { str: "Click on one of your brainrots to sell.", style: { color: serverUiText } },
+            { str: "[UNADDED] Click on one of your brainrots to sell.", style: { color: serverUiText } },
             { str: "\nRemove the brainrot from your inventory and collect its value in coins.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (actionType == "upgrade") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Lime Directional Arrow", style: { color: serverUiText } },
-            { str: "Click on one of your brainrots to upgrade.", style: { color: serverUiText } },
+            { str: "[UNADDED] Click on one of your brainrots to upgrade.", style: { color: serverUiText } },
             { str: "\nPay gold and make it produce more!", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (actionType == "claim") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Block of Gold", style: { color: serverUiText } },
-            { str: "Click on one of your brainrots to claim the coins it earned you!", style: { color: serverUiText } },
+            { str: "[UNADDED] Click on one of your brainrots to claim the coins it earned you!", style: { color: serverUiText } },
             { str: "\nUpgrade it to be able to produce more coins per second.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (actionType == "bat") {
@@ -1342,4 +1342,38 @@ function isInsideCube(pos, pos1, pos2) {
         return true;
     }
     return false;
+}
+
+function applyCustomItems(myId) {
+    api.clearInventory(myId);
+
+    api.setItemSlot(myId, 0, "Stick", 1, {
+        customDisplayName: "Bat",
+        customDescription: "Hit players with this to launch them away!",
+        customAttributes: {
+            enchantments: {
+                "Vertical Knockback": 1,
+                "Horizontal Knockback": 1,
+            }, enchantmentTier: "Tier 5"
+        }
+    });
+
+    api.setItemSlot(myId, 7, "Gold Bar", 1, {
+        customDisplayName: "Claim", customDescription: "Click a brainrot while holding this to claim the coins it earned.",
+        customAttributes: {
+            enchantmentTier: "Tier 5"
+        }
+    });
+    api.setItemSlot(myId, 9, "Lime Paintball", 1, {
+        customDisplayName: "Upgrade", customDescription: "Click a brainrot while holding this to upgrade it.",
+        customAttributes: {
+            enchantmentTier: "Tier 5"
+        }
+    });
+    api.setItemSlot(myId, 8, "Bin", 1, {
+        customDisplayName: "Sell", customDescription: "Click a brainrot while holding this to sell it.",
+        customAttributes: {
+            enchantmentTier: "Tier 5"
+        }
+    });
 }
