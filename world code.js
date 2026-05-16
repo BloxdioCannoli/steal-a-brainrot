@@ -48,11 +48,27 @@ function onPlayerSelectInventorySlot(myId, idx) {
 
     if (customName == "Sell") {
         api.setClientOption(myId, "middleTextLower", [
-            { str: "Click on one of your brainrots to sell.", style: { color: serverUiText } }
+            { icon: "Gold Coin", style: { color: serverUiText } },
+            { str: "Click on one of your brainrots to sell.", style: { color: serverUiText } },
+            { str: "\nRemove the brainrot from your inventory and collect its value in coins.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (customName == "Upgrade") {
         api.setClientOption(myId, "middleTextLower", [
-            { str: "Click on one of your brainrots to upgrade.", style: { color: serverUiText } }
+            { icon: "Lime Directional Arrow", style: { color: serverUiText } },
+            { str: "Click on one of your brainrots to upgrade.", style: { color: serverUiText } },
+            { str: "\nPay gold and make it produce more!", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
+        ]);
+    } else if (customName == "Claim") {
+        api.setClientOption(myId, "middleTextLower", [
+            { icon: "Block of Gold", style: { color: serverUiText } },
+            { str: "Click on one of your brainrots to claim the coins it earned you!", style: { color: serverUiText } },
+            { str: "\nUpgrade it to be able to produce more coins per second.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
+        ]);
+    } else if (customName == "Bat") {
+        api.setClientOption(myId, "middleTextLower", [
+            { icon: "Horizontal Knockback Enchantment", style: { color: serverUiText } },
+            { str: "Click on a player to launch them away.", style: { color: serverUiText } },
+            //{ str: "\nUpgrade it to be able to produce more coins per second.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else {
         api.setClientOptionToDefault(myId, "middleTextLower");
@@ -65,7 +81,7 @@ function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem,
         api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
         return "preventDamage";
     } else {
-        if (item?.name != "Stick") {
+        if (item?.name == "Stick") {
             api.setHealth(damagedPlayer, 100);
             applyHitCooldown(myId);
         } else {
@@ -140,7 +156,7 @@ function canHit(myId) {
     return !api.hasEffect(myId, "Hit cooldown");
 }
 function applyHitCooldown(myId) {
-    api.applyEffect(myId, "Hit cooldown", 5000, { displayName: "Hit cooldown", icon: "Fist" });
+    api.applyEffect(myId, "Hit cooldown", 1000, { displayName: "Hit cooldown", icon: "Fist" });
 }
 
 disableAdminMode = false;
@@ -152,7 +168,7 @@ playerJoinLevel = {};
 
 enableLighting = true;
 
-admin = ["WanderingCannoli", "JavisthejavisYT", "SKY_SPIRIT", "Arthur_Mom"];
+admin = ["WanderingCannoli", "WanderingCanoli", "JavisthejavisYT", "SKY_SPIRIT", "Arthur_Mom"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
