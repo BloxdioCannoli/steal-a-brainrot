@@ -1,4 +1,4 @@
-//update: aaaaaa
+//update: aaaa
 
 /*
 === TODO ===
@@ -698,6 +698,7 @@ function runPlayerJoin(myId) {
 
         let isAdmin = admin.includes(username);
         if (isAdmin) {
+            applyCustomItems(myId);
             api.setCanChangeBlockType(myId, "Invisible Solid");
             api.setWalkThroughType(myId, "Invisible Solid", false);
             api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 2);
@@ -710,6 +711,7 @@ function runPlayerJoin(myId) {
             });
             api.setHealth(myId, null);
         } else {
+            applyCustomItems(myId);
             api.setCantChangeBlockType(myId, "Invisible Solid");
             api.setWalkThroughType(myId, "Invisible Solid", true);
             api.setWalkThroughRect(myId, [-1000, 0, -942], [-999, -10000, -941], 0);
