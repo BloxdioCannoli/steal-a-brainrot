@@ -19,12 +19,9 @@ Failed steal:
 2. Remove the effect and display
 
 - purchasing brainrots
-- selling brainrots
 - claiming what brainrots earned you
 - invis solid not removed when a player leaves with an active base lock
 
-
-- for tick() when forcing onPlayerJoin, check if any generated entities exist before re-generating
 - look into doing claiming with collisions
 - players who leave when initializing or in some other cases break the code forever
 
@@ -35,7 +32,7 @@ Failed steal:
 
 === BUGS ===
 
-- onPlayerJoin not fully registering
+- onPlayerJoin not fully registering on interrupt
 - some brainrot mesh not being removed
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
