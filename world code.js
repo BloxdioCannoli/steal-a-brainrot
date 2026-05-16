@@ -1,4 +1,4 @@
-//update: aaaa
+//update: a
 
 /*
 === TODO ===
@@ -39,6 +39,85 @@ Failed steal:
 - some brainrot mesh not being removed
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
+
+function refreshBrainrotRender(myId) {
+    let base = bases[myId];
+    clearRenderedBrainrots(myId);
+    updateBrainrots(myId, base.brainrotPlatforms);
+}
+
+function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    //api.log("damage detected");
+    let ownedBrainrots = getBrainrots(myId);
+    if (ownedBrainrots.length - 1 >= maxBrainrots) { api.sendMessage(myId, [{ str: "You have too many brainrots!" }]); return "preventChange"; }
+
+    let mob = "undecided";
+    if (!playerBrainrotIds[myId][mobId]) {
+        for (let m of mobs) {
+            if (m.id == mobId) { mob = m; }
+        }
+        if (mob == "undecided") {
+            if (!stealable[myId].includes(mobId)) {
+                // does not exist as a brainrot
+                // api.despawnMob(mobId); return "preventDamage";
+            } else {
+                api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
+                return "preventDamage";
+            }
+        }
+    } else {
+        let ownedInfo = playerBrainrotIds[myId][mobId];
+        let dbIdx = ownedInfo.idx;
+        let dbValue = ownedBrainrots[dbIdx];
+        let configValue = getBrainrotById(dbValue.id);
+
+        let actionType = getHeldActionType(myId);
+
+        if (actionType == "upgrade") {
+            api.sendMessage(myId, [{ str: "You can't upgrade right now!" }]);
+        } else if (actionType == "claim") {
+            api.sendMessage(myId, [{ str: "You can't claim right now!" }]);
+        } else if (actionType == "sell") {
+            removeBrainrot(myId, dbIdx);
+            refreshBrainrotRender(myId);
+
+            api.sendMessage(myId, [{ str: `Sold` }]);
+        } else {
+            api.sendMessage(myId, [{ str: "Use an item on the right side of your hotbar to interact." }]);
+        }
+
+        return "preventDamage";
+    }
+    let rarityId = null;
+
+    //api.log("---");
+    //api.log(mob);
+    outer:
+    for (let rarity of brainrots) {
+        for (let e of rarity.ents) {
+            //api.log(e);
+            if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
+                rarityId = rarity.cid;
+                break outer;
+            }
+        }
+    }
+
+    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
+    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    if (hasAdded) {
+        api.despawnMob(mobId);
+
+        let base = bases[myId];
+
+        clearRenderedBrainrots(myId);
+        updateBrainrots(myId, base.brainrotPlatforms);
+    } else {
+
+    }
+
+    return "preventDamage";
+}
 
 function getHeldActionType(myId) {
     let item = api.getHeldItem(myId);
@@ -99,66 +178,6 @@ function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem,
             return "preventDamage";
         }
     }
-}
-
-function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    //api.log("damage detected");
-    let ownedBrainrots = getBrainrots(myId);
-    if (ownedBrainrots.length - 1 >= maxBrainrots) { api.sendMessage(myId, [{ str: "You have too many brainrots!" }]); return "preventChange"; }
-
-    let mob = "undecided";
-    if (!playerBrainrotIds[myId][mobId]) {
-        for (let m of mobs) {
-            if (m.id == mobId) { mob = m; }
-        }
-        if (mob == "undecided") {
-            if (!stealable[myId].includes(mobId)) {
-                // does not exist as a brainrot
-                // api.despawnMob(mobId); return "preventDamage";
-            } else {
-                api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
-                return "preventDamage";
-            }
-        }
-    } else {
-        let ownedInfo = playerBrainrotIds[myId][mobId];
-        let dbIdx = ownedInfo.idx;
-        let dbValue = ownedBrainrots[dbIdx];
-        let configValue = getBrainrotById(dbValue.id);
-
-        api.log(configValue);
-        api.sendMessage(myId, [{ str: "You can't interact with your own mobs right now!" }]);
-        return "preventDamage";
-    }
-    let rarityId = null;
-
-    //api.log("---");
-    //api.log(mob);
-    outer:
-    for (let rarity of brainrots) {
-        for (let e of rarity.ents) {
-            //api.log(e);
-            if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
-                rarityId = rarity.cid;
-                break outer;
-            }
-        }
-    }
-
-    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
-    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
-    if (hasAdded) {
-        api.despawnMob(mobId);
-
-        let base = bases[myId];
-
-        clearRenderedBrainrots(myId);
-        updateBrainrots(myId, base.brainrotPlatforms);
-    } else {
-
-    }
-
-    return "preventDamage";
 }
 
 oldPlayers = [];
@@ -420,17 +439,21 @@ let consec = 0; let wait = 0; function tick() {
                 //api.log(`toHide element at ${[x, y, z]} found`)
 
                 if (count <= 8) {
-                    if (hideMobs) {
-                        api.applyEffect(m, "Invisible", null, {});
+                    try {
+                        if (hideMobs) {
+                            api.applyEffect(m, "Invisible", null, {});
+                        }
+                        api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
+                        api.setPosition(m, [x, y, z]);
+                        let effects = api.getEffects(m);
+                        //api.log(effects)
+                        if (effects.includes("Invisible") && count <= 1) {
+                            toHide.splice(h, 1); continue;
+                        }
+                        //api.log(`toHide element at ${[x, y, z]} found`)
+                    } catch {
+                        toHide.splice(hNum, 1);
                     }
-                    api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
-                    api.setPosition(m, [x, y, z]);
-                    let effects = api.getEffects(m);
-                    //api.log(effects)
-                    if (effects.includes("Invisible") && count <= 1) {
-                        toHide.splice(h, 1); continue;
-                    }
-                    //api.log(`toHide element at ${[x, y, z]} found`)
                 }; h.count--;
             }
         }
@@ -650,7 +673,7 @@ function onPlayerLeave(myId) {
 function onPlayerJoin(myId) {
     let username = api.getEntityName(myId);
 
-    if (!isCannoli(myId)) { api.deletePlayerDbValue(myId, "brainrots") }
+    if (!isCannoli(myId)) { api.deletePlayerDbValue(myId, "brainrots"); }
 
     if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
 
