@@ -40,7 +40,58 @@ Failed steal:
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
 
-oldPlayers=[];
+function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    //api.log("damage detected");
+    let ownedBrainrots = getBrainrots(myId);
+    if (ownedBrainrots.length - 1 >= maxBrainrots) { api.sendMessage(myId, [{ str: "You have too many brainrots!" }]); return "preventChange"; }
+
+    let mob = "undecided";
+    if (!playerBrainrotIds[myId][mobId]) {
+        for (let m of mobs) {
+            if (m.id == mobId) { mob = m; }
+        }
+        if (mob == "undecided") {
+            if (!stealable[myId].includes(mobId)) { api.despawnMob(mobId); return "preventDamage"; } else {
+                api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
+                return "preventDamage";
+            }
+        }
+    } else {
+        api.sendMessage(myId, [{ str: "You can't interact with your own mobs right now!" }]);
+        return "preventDamage";
+    }
+    let rarityId = null;
+
+    //api.log("---");
+    //api.log(mob);
+    outer:
+    for (let rarity of brainrots) {
+        for (let e of rarity.ents) {
+            //api.log(e);
+            if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
+                rarityId = rarity.cid;
+                break outer;
+            }
+        }
+    }
+
+    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
+    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+    if (hasAdded) {
+        api.despawnMob(mobId);
+
+        let base = bases[myId];
+
+        clearRenderedBrainrots(myId);
+        updateBrainrots(myId, base.brainrotPlatforms);
+    } else {
+
+    }
+
+    return "preventDamage";
+}
+
+oldPlayers = [];
 
 function canHit(myId) {
     return !api.hasEffect(myId, "Hit cooldown");
@@ -73,7 +124,7 @@ admin = ["WanderingCannoli", "JavisthejavisYT", "SKY_SPIRIT", "Arthur_Mom"];
 customText = {
     rebirth: [-1010, -997, -1027],
     luck: [-979, -992, -1045],
-    merge: [-998, -996, -1038],
+    merge: [-993, -996, -992],
 };
 
 shouldRunPlayerJoin = {};
@@ -152,52 +203,6 @@ basesConfig = [
         [-986, -989, -1010], [-989, -989, -1010], [-992, -989, -1010]]
     },
 ];
-
-function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    //api.log("damage detected");
-    let ownedBrainrots = getBrainrots(myId);
-    if (ownedBrainrots.length - 1 >= maxBrainrots) { api.sendMessage(myId, [{ str: "You have too many brainrots!" }]); return "preventChange"; }
-
-    let mob = "undecided";
-    for (let m of mobs) {
-        if (m.id == mobId) { mob = m; }
-    }
-    if (mob == "undecided") {
-        if (!stealable[myId].includes(mobId)) { api.despawnMob(mobId); return "preventDamage"; } else {
-            api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
-            return "preventDamage";
-        }
-    }
-    let rarityId = null;
-
-    //api.log("---");
-    //api.log(mob);
-    outer:
-    for (let rarity of brainrots) {
-        for (let e of rarity.ents) {
-            //api.log(e);
-            if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
-                rarityId = rarity.cid;
-                break outer;
-            }
-        }
-    }
-
-    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
-    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
-    if (hasAdded) {
-        api.despawnMob(mobId);
-
-        let base = bases[myId];
-
-        clearRenderedBrainrots(myId);
-        updateBrainrots(myId, base.brainrotPlatforms);
-    } else {
-
-    }
-
-    return "preventDamage";
-}
 
 let dbListSeparator = "|dbListSeparator|";
 
@@ -334,10 +339,10 @@ let consec = 0; let wait = 0; function tick() {
     pNum = (pNum + 1) % (players.length + 1);
     tickNum++;
 
-    if (oldPlayers!=players) {
+    if (oldPlayers != players) {
         for (let p of oldPlayers) {
             if (!players.includes(p)) {
-                beginRunPlayerJoin(myId)
+                beginRunPlayerJoin(myId);
             }
         }
     }
@@ -547,6 +552,10 @@ let consec = 0; let wait = 0; function tick() {
 
 function onPlayerAltAction(myId, x, y, z, block, targetEId) {
     let [lx, ly, lz] = bases[myId].lockPos;
+
+    if (block.includes("Pod")) {
+        api.sendMessage(myId, [{ str: "Merging doesn't work right now!" }]);
+    }
 
     if (block == "Bin") { api.setPlayerDbValue(myId, "coins", 0); return; }
 
@@ -1212,7 +1221,7 @@ function showBrainrotStealingEffect(myId, brainrotName = "67 Statue") {
         autoRotate: true,
         size: 1,
         blockName: brainrotName,
-    }, [0, 0.6, 0], [0, 0, 0]);
+    }, [0, 0.59, 0], [0, 0, 0]);
 
     api.setTargetedPlayerSettingForEveryone(myId, "nameTagInfo", {
         subtitle: [
@@ -1277,3 +1286,22 @@ function isInsideCube(pos, pos1, pos2) {
     }
     return false;
 }
+
+onPlayerChat = (playerId, chatMessage) => {
+    const name = api.getEntityName(playerId);
+
+    if (name === "SKY_SPIRIT") {
+        return {
+            [playerId]: {
+                prefixContent: [
+                    {
+                        text: "[Muted] ",
+                        color: "red",
+                    },
+                ],
+            },
+        };
+    }
+
+    return true;
+};
