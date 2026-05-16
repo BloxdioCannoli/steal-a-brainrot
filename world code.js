@@ -40,35 +40,46 @@ Failed steal:
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
 
-let serverUiText = "#cef3ff";
-function onPlayerSelectInventorySlot(myId, idx) {
+function getHeldActionType(myId) {
     let item = api.getHeldItem(myId);
-
     let customName = item?.attributes.customDisplayName;
 
-    if (customName == "Sell") {
+    if (customName == "Upgrade") { return "upgrade"; }
+    if (customName == "Claim") { return "claim"; }
+    if (customName == "Sell") { return "sell"; }
+
+    if (customName == "Bat") { return "bat"; }
+
+    return null;
+}
+
+let serverUiText = "#cef3ff";
+function onPlayerSelectInventorySlot(myId, idx) {
+    let actionType = getHeldActionType(myId);
+
+    if (actionType == "sell") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Gold Coin", style: { color: serverUiText } },
             { str: "Click on one of your brainrots to sell.", style: { color: serverUiText } },
             { str: "\nRemove the brainrot from your inventory and collect its value in coins.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
-    } else if (customName == "Upgrade") {
+    } else if (actionType == "upgrade") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Lime Directional Arrow", style: { color: serverUiText } },
             { str: "Click on one of your brainrots to upgrade.", style: { color: serverUiText } },
             { str: "\nPay gold and make it produce more!", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
-    } else if (customName == "Claim") {
+    } else if (actionType == "claim") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Block of Gold", style: { color: serverUiText } },
             { str: "Click on one of your brainrots to claim the coins it earned you!", style: { color: serverUiText } },
             { str: "\nUpgrade it to be able to produce more coins per second.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
-    } else if (customName == "Bat") {
+    } else if (actionType == "bat") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Horizontal Knockback Enchantment", style: { color: serverUiText } },
             { str: "Click on a player to launch them away.", style: { color: serverUiText } },
-            //{ str: "\nUpgrade it to be able to produce more coins per second.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
+            //{ str: "\n...", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else {
         api.setClientOptionToDefault(myId, "middleTextLower");
