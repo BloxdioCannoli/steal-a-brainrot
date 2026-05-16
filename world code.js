@@ -40,6 +40,40 @@ Failed steal:
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
 
+let serverUiText = "#cef3ff";
+function onPlayerSelectInventorySlot(myId, idx) {
+    let item = api.getHeldItem(myId);
+
+    let customName = item?.attributes.customDisplayName;
+
+    if (customName == "Sell") {
+        api.setClientOption(myId, "middleTextLower", [
+            { str: "Click on one of your brainrots to sell.", style: { color: serverUiText } }
+        ]);
+    } else if (customName == "Upgrade") {
+        api.setClientOption(myId, "middleTextLower", [
+            { str: "Click on one of your brainrots to upgrade.", style: { color: serverUiText } }
+        ]);
+    } else {
+        api.setClientOptionToDefault(myId, "middleTextLower");
+    }
+}
+
+function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
+    let item = api.getHeldItem(myId);
+    if (!canHit(myId)) {
+        api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
+        return "preventDamage";
+    } else {
+        if (item?.name != "Stick") {
+            api.setHealth(damagedPlayer, 100);
+            applyHitCooldown(myId);
+        } else {
+            return "preventDamage";
+        }
+    }
+}
+
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     //api.log("damage detected");
     let ownedBrainrots = getBrainrots(myId);
@@ -51,7 +85,10 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
             if (m.id == mobId) { mob = m; }
         }
         if (mob == "undecided") {
-            if (!stealable[myId].includes(mobId)) { api.despawnMob(mobId); return "preventDamage"; } else {
+            if (!stealable[myId].includes(mobId)) {
+                // does not exist as a brainrot
+                // api.despawnMob(mobId); return "preventDamage";
+            } else {
                 api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
                 return "preventDamage";
             }
@@ -104,16 +141,6 @@ function canHit(myId) {
 }
 function applyHitCooldown(myId) {
     api.applyEffect(myId, "Hit cooldown", 5000, { displayName: "Hit cooldown", icon: "Fist" });
-}
-
-function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
-    if (!canHit(myId)) {
-        api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
-        return "preventDamage";
-    } else {
-        api.setHealth(damagedPlayer, 100);
-        applyHitCooldown(myId);
-    }
 }
 
 disableAdminMode = false;
@@ -631,10 +658,7 @@ function runPlayerJoin(myId) {
 
         if (enableLighting) {
             api.setClientOptions(myId, {
-                "skyBox": {
-                    type: "earth",
-                    vertexTint: [0, 0, 0]
-                }
+                "skyBox": "starry"
             });
         } else {
             api.setClientOptions(myId, {
