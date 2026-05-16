@@ -650,6 +650,8 @@ function onPlayerLeave(myId) {
 function onPlayerJoin(myId) {
     let username = api.getEntityName(myId);
 
+    if (!isCannoli(myId)) { api.deletePlayerDbValue(myId, "brainrots") }
+
     if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
 
     beginRunPlayerJoin(myId);
@@ -972,7 +974,7 @@ function setBaseLockedState(myId, type = "locked") {
 
 function log(msg) { api.sendMessage(api.getPlayerId("WanderingCannoli"), JSON.stringify(msg)); }
 
-function isCannoli(myId) { return myId == api.getPlayerId("WanderingCannoli"); };
+function isCannoli(myId) { return api.getEntityName(myId) == "WanderingCannoli"; };
 
 function getFreeBase() {
     let indexes = [];
