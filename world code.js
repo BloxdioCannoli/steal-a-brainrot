@@ -1,9 +1,7 @@
-//update: a
+//update: aaaa
 
 /*
 === TODO ===
-
-RIGHT NOW: work on removing brainrots from db
 
 == stealing brainrots from other players ==
 General:
@@ -18,24 +16,21 @@ Failed steal:
 1. Re-add the brainrot to the owner's DB
 2. Remove the effect and display
 
-- purchasing brainrots
-- claiming what brainrots earned you
 - invis solid not removed when a player leaves with an active base lock
 
-- look into doing claiming with collisions
 - players who leave when initializing or in some other cases break the code forever
 
 === Important Helper Functions ===
-
-- Deleting brainrots from player DB
 
 
 === BUGS ===
 
 - onPlayerJoin not fully registering on interrupt
-- some brainrot mesh not being removed
+- some brainrot mesh not being removed (seems like a Bloxd bug)
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 */
+
+claimingStart = 1779157161692;
 
 function refreshBrainrotRender(myId) {
     let base = bases[myId];
@@ -71,9 +66,9 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         let actionType = getHeldActionType(myId);
 
         if (actionType == "upgrade") {
-            api.sendMessage(myId, [{ str: "You can't upgrade right now!" }]);
+            attemptUpgradeBrainrot(myId, dbIdx);
         } else if (actionType == "claim") {
-            api.sendMessage(myId, [{ str: "You can't claim right now!" }]);
+            claimCoins(myId, dbIdx);
         } else if (actionType == "sell") {
             removeBrainrot(myId, dbIdx);
             refreshBrainrotRender(myId);
@@ -104,7 +99,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         }
     }
 
-    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName });
+    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
     //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
     if (hasAdded) {
         api.despawnMob(mobId);
@@ -146,13 +141,13 @@ function onPlayerSelectInventorySlot(myId, idx) {
     } else if (actionType == "upgrade") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Lime Directional Arrow", style: { color: serverUiText } },
-            { str: "[UNADDED] Click on one of your brainrots to upgrade.", style: { color: serverUiText } },
+            { str: "Click on one of your brainrots to upgrade.", style: { color: serverUiText } },
             { str: "\nPay gold and make it produce more!", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (actionType == "claim") {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Block of Gold", style: { color: serverUiText } },
-            { str: "[UNADDED] Click on one of your brainrots to claim the coins it earned you!", style: { color: serverUiText } },
+            { str: "Click on one of your brainrots to claim the coins it earned you!", style: { color: serverUiText } },
             { str: "\nUpgrade it to be able to produce more coins per second.", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else if (actionType == "bat") {
@@ -370,6 +365,17 @@ function setBrainrot(myId, idx, brainrot) {
     setBrainrots(myId, brainrots);
 }
 
+function setBrainrotValue(myId, idx, key, value) {
+    let brainrot = getBrainrots(myId)[idx];
+    brainrot[key] = value;
+    setBrainrot(myId, idx, brainrot);
+}
+
+function getBrainrotValue(myId, idx, key) {
+    let brainrot = getBrainrots(myId)[idx];
+    return brainrot[key];
+}
+
 let lavaPos = [-999, -1002, -941];
 
 brainrotSpawnPos = [-999, -999, -1025];
@@ -449,6 +455,7 @@ let consec = 0; let wait = 0; function tick() {
                         let effects = api.getEffects(m);
                         //api.log(effects)
                         if (effects.includes("Invisible") && count <= 1) {
+                            api.setPosition(mob, x + 0, y + 0, z + 0);
                             toHide.splice(h, 1); continue;
                         }
                         //api.log(`toHide element at ${[x, y, z]} found`)
@@ -673,8 +680,6 @@ function onPlayerLeave(myId) {
 
 function onPlayerJoin(myId) {
     let username = api.getEntityName(myId);
-
-    if (!isCannoli(myId)) { api.deletePlayerDbValue(myId, "brainrots"); }
 
     if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
 
@@ -1067,6 +1072,7 @@ function updateBrainrots(myId, spawnAt) {
 
         let mob = api.attemptSpawnMob("Draugr Zombie", ...brainrotSpawnPos);
         let rarityName = b.rarityName;
+        let level = b.level;
         //api.log(`Called updateBrainrots`)
         api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
             content: [
@@ -1074,10 +1080,9 @@ function updateBrainrots(myId, spawnAt) {
             ], backgroundColor: "rgba(0,0,0,0)",
 
             subtitle: [
-                { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   Coins per Second: ${brainrotConfig.data.cps}` }
+                { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   CpS: ${brainrotConfig.data.cps * level}    Level: ${level}` }
             ]
         });
-        api.setPosition(mob, x + 0, y + 0, z + 0);
 
         playerBrainrotIds[myId][mob] = { idx: bNum };
         stealable[myId].push(mob);
@@ -1373,7 +1378,7 @@ function isInsideCube(pos, pos1, pos2) {
 }
 
 function applyCustomItems(myId) {
-    api.clearInventory(myId);
+    //api.clearInventory(myId);
 
     api.setItemSlot(myId, 0, "Stick", 1, {
         customDisplayName: "Bat",
@@ -1404,4 +1409,68 @@ function applyCustomItems(myId) {
             enchantmentTier: "Tier 5"
         }
     });
+}
+
+function minifyTime(time) {
+    return Math.round((time - claimingStart) / 1000);
+}
+
+function deMinifyTime(time) {
+    return Math.round(((time * 1000) + claimingStart));
+}
+
+function addCoins(myId, add) {
+    let coins = api.getPlayerDbValue(pId, "coins");
+
+    coins += add;
+
+    api.setPlayerDbValue(pId, "coins", coins);
+    api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
+}
+
+function removeCoins(myId, remove) {
+    let coins = api.getPlayerDbValue(pId, "coins");
+
+    coins -= remove;
+
+    api.setPlayerDbValue(pId, "coins", coins);
+    api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
+}
+
+function claimCoins(myId, brainrotIdx) {
+    let level = getBrainrotValue(myId, brainrotIdx, "level");
+    let cps = getBrainrotById(getBrainrotValue(myId, brainrotIdx, "id")).data.cps;
+
+    let upgradedcps = level * cps;
+
+    let lastclaimed = deMinifyTime(getBrainrotValue(myId, brainrotIdx, "lastClaimedAt"));
+
+    let lastclaimeddist = Math.round(api.now() - lastclaimed) / 1000;
+
+
+    let earned = Math.round(lastclaimeddist * upgradedcps);
+    setBrainrotValue(myId, brainrotIdx, "lastClaimedAt", minifyTime(api.now()));
+    addCoins(myId, earned);
+
+    api.sendMessage(myId, [{str: `Claimed ${earned} coins after ${lastclaimeddist} seconds of not claiming, which generated ${upgradedcps} coins per second.`}])
+
+    refreshBrainrotRender(myId);
+}
+
+function attemptUpgradeBrainrot(myId, brainrotIdx) {
+    let level = getBrainrotValue(myId, brainrotIdx, "level");
+    let cps = getBrainrotById(getBrainrotValue(myId, brainrotIdx, "id")).data.cps;
+    let coins = api.getPlayerDbValue(myId, "coins");
+
+    let cost = Math.max((level * (cps * 10)), 0);
+
+    if (coins >= cost) {
+        setBrainrotValue(myId, brainrotIdx, "level", level + 1);
+        removeCoins(myId, cost);
+        api.sendMessage(myId, [{str: `Upgraded to level ${level+1} for ${cost} coins!`}])
+    } else {
+        api.sendMessage(myId, [{str: `You'll need ${cost-coins} more coins in order to upgrade to level ${level+1}.`}])
+    }
+
+    refreshBrainrotRender(myId);
 }
