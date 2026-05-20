@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaa
+//update: aaaaaaaaaaaaa
 
 /*
 === TODO ===
@@ -102,16 +102,8 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 
                 refreshBrainrotRender(stealingFrom);
 
-                api.sendMessage(myId, [{ str: "You can't steal mobs very well right now!", style: { fontStyle: "italic" } }]);
-                api.sendMessage(myId, [{ str: `Stealing from: ${api.getEntityName(stealingFrom)} (${stealingFrom})` }]);
-
                 return "preventDamage";
             } else {
-                for (let ids of stealable) {
-
-                }
-                api.sendMessage(myId, [{ str: "You can't steal mobs very well right now! (2)" }]);
-
                 return "preventDamage";
             }
         }
@@ -471,7 +463,7 @@ let consec = 0; let wait = 0; function tick() {
     if (oldPlayers != players) {
         for (let p of oldPlayers) {
             if (!players.includes(p)) {
-                beginRunPlayerJoin(myId);
+                beginRunPlayerJoin(p);
             }
         }
     }
