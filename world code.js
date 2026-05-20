@@ -1,4 +1,4 @@
-//update: aaaa
+//update: aaaaaaaaaaaa
 
 /*
 === TODO ===
@@ -38,10 +38,39 @@ function refreshBrainrotRender(myId) {
     updateBrainrots(myId, base.brainrotPlatforms);
 }
 
+function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
+    let item = api.getHeldItem(myId);
+    if (!canHit(myId)) {
+        api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
+        return "preventDamage";
+    } else {
+        if (item?.name == "Stick") {
+            api.setHealth(damagedPlayer, 100);
+            applyHitCooldown(myId);
+            attemptReturn(damagedPlayer);
+        } else {
+            return "preventDamage";
+        }
+    }
+}
+
+stealing = {};
+beingStolenFrom = {};
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    //api.log("damage detected");
+    if (stealing[myId]) {
+        api.sendMessage(myId, [{ str: "Can't interact with other brainrots while stealing." }]);
+        return "preventDamage";
+    }
+    // Make this check not affect upgrades
     let ownedBrainrots = getBrainrots(myId);
-    if (ownedBrainrots.length - 1 >= maxBrainrots) { api.sendMessage(myId, [{ str: "You have too many brainrots!" }]); return "preventChange"; }
+    if (beingStolenFrom[myId] && ownedBrainrots.length >= maxBrainrots) {
+        api.sendMessage(myId, [{ str: "You still have a chance to get back that stolen brainrot!" }]);
+        return "preventDamage";
+    }
+    else if (ownedBrainrots.length - 1 >= maxBrainrots) {
+        api.sendMessage(myId, [{ str: "You have too many brainrots!" }]);
+        return "preventDamage";
+    }
 
     let mob = "undecided";
     if (!playerBrainrotIds[myId][mobId]) {
@@ -50,10 +79,39 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         }
         if (mob == "undecided") {
             if (!stealable[myId].includes(mobId)) {
-                // does not exist as a brainrot
-                // api.despawnMob(mobId); return "preventDamage";
+                let stealingFrom = null;
+                for (let id in stealable) {
+                    for (let brainrot of stealable[id]) {
+                        if (brainrot == mobId) {
+                            stealingFrom = id;
+                        }
+                    }
+                }
+
+                let ownedInfo = playerBrainrotIds[stealingFrom][mobId];
+                let dbIdx = ownedInfo.idx;
+                let ownedBrainrots = getBrainrots(stealingFrom);
+                let dbValue = ownedBrainrots[dbIdx];
+                let configValue = getBrainrotById(dbValue.id);
+
+                stealing[myId] = { from: stealingFrom, brainrot: dbValue };
+                beingStolenFrom[stealingFrom] = true;
+
+                removeBrainrot(stealingFrom, dbIdx);
+                showBrainrotStealingEffect(myId, configValue.blockName);
+
+                refreshBrainrotRender(stealingFrom);
+
+                api.sendMessage(myId, [{ str: "You can't steal mobs very well right now!", style: { fontStyle: "italic" } }]);
+                api.sendMessage(myId, [{ str: `Stealing from: ${api.getEntityName(stealingFrom)} (${stealingFrom})` }]);
+
+                return "preventDamage";
             } else {
-                api.sendMessage(myId, [{ str: "You can't steal mobs right now!" }]);
+                for (let ids of stealable) {
+
+                }
+                api.sendMessage(myId, [{ str: "You can't steal mobs very well right now! (2)" }]);
+
                 return "preventDamage";
             }
         }
@@ -161,21 +219,6 @@ function onPlayerSelectInventorySlot(myId, idx) {
     }
 }
 
-function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
-    let item = api.getHeldItem(myId);
-    if (!canHit(myId)) {
-        api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
-        return "preventDamage";
-    } else {
-        if (item?.name == "Stick") {
-            api.setHealth(damagedPlayer, 100);
-            applyHitCooldown(myId);
-        } else {
-            return "preventDamage";
-        }
-    }
-}
-
 oldPlayers = [];
 
 function canHit(myId) {
@@ -194,7 +237,7 @@ playerJoinLevel = {};
 
 enableLighting = true;
 
-admin = ["WanderingCannoli", "WanderingCanoli", "JavisthejavisYT", "SKY_SPIRIT", "Arthur_Mom"];
+admin = ["WanderingCannoli", "WanderingCanoli"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
@@ -637,9 +680,20 @@ let consec = 0; let wait = 0; function tick() {
             });
         }
 
+        let pos = api.getPosition(pId);
+        if (pos != oldPos) {
+            let inside = isInOwnBase(pId);
+            if (inside) {
+                attemptSteal(pId);
+            }
+
+        }
+
         oldCoins[pId] = coins;
+        oldPos[pId] = pos;
     }
 }
+oldPos = {};
 
 function onPlayerAltAction(myId, x, y, z, block, targetEId) {
     let [lx, ly, lz] = bases[myId].lockPos;
@@ -1322,7 +1376,7 @@ function showBrainrotStealingEffect(myId, brainrotName = "67 Statue") {
 
     api.applyEffect(myId, "stealingBrainrot", null, { icon: "Thief", displayName: `Stealing: ${trimmedName}` });
     api.setClientOptions(myId, {
-        "speedMultiplier": 0.8,
+        "speedMultiplier": 0.5,
         "jumpAmount": 4,
     });
 }
@@ -1452,7 +1506,7 @@ function claimCoins(myId, brainrotIdx) {
     setBrainrotValue(myId, brainrotIdx, "lastClaimedAt", minifyTime(api.now()));
     addCoins(myId, earned);
 
-    api.sendMessage(myId, [{str: `Claimed ${earned} coins after ${lastclaimeddist} seconds of not claiming, which generated ${upgradedcps} coins per second.`}])
+    api.sendMessage(myId, [{ str: `Claimed ${earned} coins after ${lastclaimeddist} seconds of not claiming, which generated ${upgradedcps} coins per second.` }]);
 
     refreshBrainrotRender(myId);
 }
@@ -1467,10 +1521,48 @@ function attemptUpgradeBrainrot(myId, brainrotIdx) {
     if (coins >= cost) {
         setBrainrotValue(myId, brainrotIdx, "level", level + 1);
         removeCoins(myId, cost);
-        api.sendMessage(myId, [{str: `Upgraded to level ${level+1} for ${cost} coins!`}])
+        api.sendMessage(myId, [{ str: `Upgraded to level ${level + 1} for ${cost} coins!` }]);
     } else {
-        api.sendMessage(myId, [{str: `You'll need ${cost-coins} more coins in order to upgrade to level ${level+1}.`}])
+        api.sendMessage(myId, [{ str: `You'll need ${cost - coins} more coins in order to upgrade to level ${level + 1}.` }]);
     }
 
     refreshBrainrotRender(myId);
+}
+
+function resetBrainrots(myId) {
+    api.deletePlayerDbValue(myId, "brainrots");
+    attemptInitBrainrotDb(myId);
+    refreshBrainrotRender(myId);
+}
+
+function debugResetAll() {
+    for (let p of api.getPlayerIds()) {
+        resetBrainrots(p);
+        addBrainrot(p, { id: [0, 0], rarityName: "Uncommon", level: 1, lastClaimedAt: minifyTime(api.now()) });
+        refreshBrainrotRender(p);
+    }
+}
+
+function attemptSteal(myId) {
+    let s = stealing[myId];
+
+    if (s) {
+        addBrainrot(myId, { id: s.brainrot.id, rarityName: s.brainrot.rarityName, level: s.brainrot.level, lastClaimedAt: minifyTime(api.now()) });
+        removeBrainrotStealingEffect(myId);
+        refreshBrainrotRender(myId);
+        delete stealing[myId];
+        beingStolenFrom[s.from] = false;
+    }
+}
+
+function attemptReturn(myId) { // myId = thief id
+    let s = stealing[myId];
+
+    if (s) {
+        addBrainrot(s.from, { id: s.brainrot.id, rarityName: s.brainrot.rarityName, level: s.brainrot.level, lastClaimedAt: minifyTime(api.now()) });
+        removeBrainrotStealingEffect(myId);
+        refreshBrainrotRender(s.from);
+        delete stealing[myId];
+        beingStolenFrom[s.from] = false;
+    }
 }
