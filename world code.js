@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaaa
+//update: aaaaaaaaaaaaaaaaaa
 
 /*
 === TODO ===
@@ -452,8 +452,13 @@ let lockTime = {};
 bases = {};
 let baseNum = {};
 
+let tickNum = 0;
+
+let tickNum2 = 0;
+
 let consec = 0; let wait = 0; function tick() {
-    if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
+    tickNum2 = (tickNum2 + 1) % 4; if (api.isNearInterrupt() || tickNum2 != 0) { return; }
+    // if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
 
     players = api.getPlayerIds();
     if (!pNum) { pNum = 0; };
@@ -643,9 +648,9 @@ let consec = 0; let wait = 0; function tick() {
                 { str: "Coding by ", style: { fontSize: "18px", fontWeight: "600", color: "#eb9310", fontStyle: "italic" } },
                 { str: "Bloxdio Cannoli on YT\n", style: { fontSize: "18px", fontWeight: "700", color: "#eb9310", fontStyle: "italic" } },
 
-                { icon: "Block of Gold", style: { fontSize: "35px" } },
-                { str: "Building by ", style: { fontSize: "18px", fontWeight: "600", color: "#10b4eb", fontStyle: "italic" } },
-                { str: "SKY_SPIRIT", style: { fontSize: "18px", fontWeight: "700", color: "#10b4eb", fontStyle: "italic" } },
+                //{ icon: "Block of Gold", style: { fontSize: "35px" } },
+                //{ str: "Building by ", style: { fontSize: "18px", fontWeight: "600", color: "#10b4eb", fontStyle: "italic" } },
+                //{ str: "SKY_SPIRIT", style: { fontSize: "18px", fontWeight: "700", color: "#10b4eb", fontStyle: "italic" } },
             ]);
             updateSidebar[pId] = false;
         }
@@ -687,7 +692,7 @@ let consec = 0; let wait = 0; function tick() {
 }
 oldPos = {};
 
-function onPlayerAltAction(myId, x, y, z, block, targetEId) {
+function onPlayerClickUp(myId, rc, x, y, z, block, targetEId) {
     let [lx, ly, lz] = bases[myId].lockPos;
 
     if (block.includes("Pod")) {
@@ -733,6 +738,8 @@ function onPlayerJoin(myId) {
 }
 function runPlayerJoin(myId) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
+
+    resetBrainrotsLastClaimedAt(myId);
 
     let username = api.getEntityName(myId);
 
@@ -1557,4 +1564,22 @@ function attemptReturn(myId) { // myId = thief id
         delete stealing[myId];
         beingStolenFrom[s.from] = false;
     }
+}
+
+function resetBrainrotsLastClaimedAt(myId) {
+    let brainrots = getBrainrots(myId);
+    for (let dbIdx in brainrots) {
+        let b = brainrots[dbIdx];
+        if (b) {
+            setBrainrotValue(myId, dbIdx, "lastClaimedAt", minifyTime(api.now()));
+        }
+    }
+}
+
+function resetToStarter(myId) {
+    resetBrainrots(myId);
+    api.setPlayerDbValue(myId, "coins", 0);
+    api.giveItem(myId, "Gold Coin", 1000);
+
+    api.sendMessage(myId, [{ str: `Reset brainrots and coins.` }]) 
 }
