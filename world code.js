@@ -229,7 +229,7 @@ playerJoinLevel = {};
 
 enableLighting = true;
 
-admin = ["WanderingCannoli", "WanderingCanoli"];
+admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
@@ -1171,7 +1171,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
 // admin commands
 function onPlayerChat(myId, message) {
     let name = api.getEntityName(myId);
-    let admins = ["WanderingCannoli", "SKY_SPIRIT", "JavisthejavisYT"];
+    let admins = ["WanderingCannoli", "JavisthejavisYT"];
 
     if (admins.includes(name) && message.startsWith("!spawn ")) {
         let targetName = message.replace("!spawn ", "").trim().toLowerCase();
