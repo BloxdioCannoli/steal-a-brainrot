@@ -33,7 +33,7 @@ Failed steal:
 
 claimingStart = 1779157161692;
 
-spawnPos = [-999, - 999, -999];
+spawnPos = [-999, -996, -999];
 
 function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
     let username = api.getEntityName(myId);
@@ -201,6 +201,8 @@ function getHeldActionType(myId) {
 
     if (customName == "Bat") { return "bat"; }
 
+    if (customName == "Reset Button") { return "resetbutton"; }
+
     return null;
 }
 
@@ -230,6 +232,12 @@ function onPlayerSelectInventorySlot(myId, idx) {
         api.setClientOption(myId, "middleTextLower", [
             { icon: "Horizontal Knockback Enchantment", style: { color: serverUiText } },
             { str: "Click on a player to launch them away.", style: { color: serverUiText } },
+            //{ str: "\n...", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
+        ]);
+    } else if (actionType == "resetbutton") {
+        api.setClientOption(myId, "middleTextLower", [
+            { icon: "Red Paintball", style: { color: serverUiText } },
+            { str: "Click while holding this item to get sent back to spawn.", style: { color: serverUiText } },
             //{ str: "\n...", style: { color: serverUiText, fontStyle: "italic", fontSize: "17px" } },
         ]);
     } else {
@@ -748,6 +756,7 @@ function onPlayerClickUp(myId, rc, x, y, z, block, targetEId) {
     }
 
     if (held?.name == "Red Paintball" && held?.attributes?.customDisplayName == "Reset Button") {
+        api.setVelocity(myId, 0, 3, 0);
         api.setPosition(myId, spawnPos);
     }
 }
@@ -1509,7 +1518,10 @@ function applyCustomItems(myId) {
 
     api.setItemSlot(myId, 1, "Red Paintball", 1, {
         customDisplayName: "Reset Button",
-        customDescription: "Click to get sent back to spawn.",
+        customDescription: "Click while holding this item to get sent back to spawn.",
+        customAttributes: {
+            enchantmentTier: "Tier 5"
+        }
     });
 
     api.setItemSlot(myId, 7, "Gold Bar", 1, {
