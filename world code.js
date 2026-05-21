@@ -1,4 +1,4 @@
-//update: aaa
+//update: aaaa
 
 /*
 === TODO ===
@@ -521,7 +521,7 @@ let consec = 0; let wait = 0; function tick() {
                 let pos = api.getPosition(mobId);
                 let [x, y, z] = pos;
                 
-                api.log(`Let's try to despawn ${mobId}`);
+                //api.log(`Let's try to despawn ${mobId}`);
                 //api.setPosition(mobId, [x, y+5, z]);
                 api.despawnMob(mobId);
 
