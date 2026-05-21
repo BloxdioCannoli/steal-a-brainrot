@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaaaaaaaaaa
+//update: a
 
 /*
 === TODO ===
@@ -29,6 +29,7 @@ Failed steal:
 - some brainrot mesh not being removed (seems like a Bloxd bug)
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
 - there seems to be an issue where player coins are synced
+- attacked brainrot sometimes (possibly) gets removed from the list of brainrots to move
 */
 
 claimingStart = 1779157161692;
@@ -113,11 +114,16 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 
                 stealing[myId] = { from: stealingFrom, brainrot: dbValue };
                 beingStolenFrom[stealingFrom] = true;
+                let s = stealing[myId];
 
                 removeBrainrot(stealingFrom, dbIdx);
                 showBrainrotStealingEffect(myId, configValue.blockName);
 
+                api.log(s.brainrot);
+                let stealingBrainrotConfig = getBrainrotById(s.brainrot.id);
+
                 refreshBrainrotRender(stealingFrom);
+                api.sendFlyingMiddleMessage(stealingFrom, [{ str: `Someone is stealing your ${stealingBrainrotConfig.name.replace(" Statue", "")}!` }], 100, 1000);
 
                 return "preventDamage";
             } else {
@@ -166,13 +172,16 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
                 }
             }
         }
+
+        // CHECKPOINT
         let coins = api.getPlayerDbValue(myId, "coins");
         let cost = mob.brainrotData.data.cost;
         if (coins >= cost) {
             let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
             //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
             if (hasAdded) {
-                api.despawnMob(mobId);
+                api.log(`Let's try to despawn ${mobId}`);
+                //api.despawnMob(mobId);
 
                 let base = bases[myId];
 
@@ -263,7 +272,7 @@ playerJoinLevel = {};
 
 enableLighting = true;
 
-admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt", "SubTo_javisthejavisyt"];
+admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt", "SubTo_javisthejavisYT"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
@@ -611,19 +620,21 @@ let consec = 0; let wait = 0; function tick() {
                 }
             }
 
-            for (let mNum in mobs) {
+            for (let mNum = mobs.length - 1; mNum >= 0; mNum--) { // previously: for (let mNum in mobs) {
                 let mob = mobs[mNum];
                 let m = mobs[mNum].id;
 
-                const remove = (m, mesh) => {
-                    try { api.deleteMeshEntity(mesh); } catch { }
-                    try { api.despawnMob(m); } catch { }
+                const remove = (m, mesh, mNum) => {
+                    api.log(`== Removing mob ==`);
+                    try { api.deleteMeshEntity(mesh); api.log(`Removed mesh`); } catch (err) { api.log(`Failed to remove mesh (${mesh})\n\nError: ${JSON.stringify(err)}`); }
+                    try { api.despawnMob(m); api.log(`Despawned mob`); } catch (err) { api.log(`Failed to despawn mob (${m})\n\nError: ${JSON.stringify(err)}`); }
                     mobs.splice(m, 1);
                 };
 
                 let [x, y, z] = [null, null, null];
-                try { [x, y, z] = api.getPosition(m); } catch {
-                    remove(m, mobs[mNum]?.mesh); continue;
+                try { [x, y, z] = api.getPosition(m); } catch (err) {
+                    api.log(`Failed to get position of ${m}. Removing.\n\nError: ${JSON.stringify(err)}`);
+                    remove(m, mobs[mNum]?.mesh, mNum); continue;
                 }
 
                 let mesh = mobs[mNum].mesh;
@@ -639,13 +650,18 @@ let consec = 0; let wait = 0; function tick() {
                 }
 
                 if (z >= brainrotDeathPos[2]) {
-                    remove(m, mesh);
+                    api.log(`Close to death. Removing.`);
+                    remove(m, mesh, mNum);
                 }
             }
         }
     } else {
         // player tick
         pId = players[pNum];
+
+        if (!playerJoinLevel[pId]) {
+            beginRunPlayerJoin(pId);
+        }
 
         let exists = true;
         try {
@@ -918,6 +934,7 @@ function runPlayerJoin(myId) {
             blockName: "Invisible Solid",
             size: 1,
         }, `${username}'s Base`);
+        
         api.setPosition(nametag, bases[myId].nametagPos);
         base.nametag = nametag;
         updateBaseNametag(myId, true);
@@ -1062,12 +1079,16 @@ function createLockNotif(myId, pos) {
         blockName: "Invisible Solid",
         hideDist: 10,
     }, "lockbase");
+
+    api.setTargetedPlayerSettingForEveryone(lockNotif, "canSee", false, true);
+    api.setOtherEntitySetting(myId, lockNotif, "canSee", true);
+
     api.setOtherEntitySetting(myId, lockNotif, "nameTagInfo", {
         content: [
             { str: "Lock Base", style: { fontSize: "150px" } }
         ],
         subtitle: [
-            { str: "Right-click on the Block of Iron to lock." }
+            { str: "Click on the Block of Iron to lock." }
         ]
     });
     api.setPosition(lockNotif, [x + 0.5, y + 0, z + 0.5]);
@@ -1169,7 +1190,7 @@ function updateBrainrots(myId, spawnAt) {
             autoRotate: true,
 
             blockName: (brainrotConfig.blockName),
-            hideDist: 25,
+            hideDist: 15,
         });
         api.setPosition(mesh, x + 0, y + 0, z + 0);
 
@@ -1179,11 +1200,11 @@ function updateBrainrots(myId, spawnAt) {
         //api.log(`Called updateBrainrots`)
         api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
             content: [
-                { str: `${brainrotConfig.displayName ?? (brainrotConfig.blockName.replace(" Statue", ""))}`, style: { fontSize: "85px", color: rarityColors[rarityName] } }
+                { str: `${brainrotConfig.displayName ?? (brainrotConfig.blockName.replace(" Statue", ""))}`, style: { fontSize: "65px", color: rarityColors[rarityName] } },
             ], backgroundColor: "rgba(0,0,0,0)",
 
             subtitle: [
-                { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   CpS: ${brainrotConfig.data.cps * level}    Level: ${level}` }
+                { str: `${rarityName}   Cost: ${brainrotConfig.data.cost}   CpS: ${brainrotConfig.data.cps * level}    Level: ${level}`, style: { fontSize: "20px" } }
             ]
         });
 
@@ -1298,6 +1319,7 @@ function clearRenderedBrainrots(myId) {
 
 function clearEntireRenderedBase(myId) {
     let base = bases[myId];
+    if (!base) { return; }
     let [x1, y1, z1] = base.borders[0];
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
@@ -1481,6 +1503,7 @@ function stopRiding67(myId) {
 
 function isInOwnBase(myId) {
     let base = bases[myId];
+    if (!base) { return; }
     let pos = api.getPosition(myId);
 
     let isInside = isInsideCube(pos, base.borders[0], base.borders[1]);
@@ -1629,6 +1652,11 @@ function attemptSteal(myId) {
         addBrainrot(myId, { id: s.brainrot.id, rarityName: s.brainrot.rarityName, level: s.brainrot.level, lastClaimedAt: minifyTime(api.now()) });
         removeBrainrotStealingEffect(myId);
         refreshBrainrotRender(myId);
+
+        let stealingBrainrotConfig = getBrainrotById(s.id);
+        api.sendFlyingMiddleMessage(s.from, [{ str: `Someone stole your ${stealingBrainrotConfig.name.replace(" Statue", "")}!` }], 100, 1000);
+        api.sendFlyingMiddleMessage(myId, [{ str: `Congrats! You stole a ${stealingBrainrotConfig.name.replace(" Statue", "")}!` }], 100, 1000);
+
         delete stealing[myId];
         beingStolenFrom[s.from] = false;
     }
