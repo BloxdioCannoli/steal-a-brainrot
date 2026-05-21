@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaaaaaaaaa
+//update: aaaaaaaaaaaaaaaaaaaa
 
 /*
 === TODO ===
@@ -28,15 +28,19 @@ Failed steal:
 - onPlayerJoin not fully registering on interrupt
 - some brainrot mesh not being removed (seems like a Bloxd bug)
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
-- function to clear laser mesh clears ALL laser mesh
 - there seems to be an issue where player coins are synced
 */
 
 claimingStart = 1779157161692;
 
+spawnPos = [-999, - 999, -999];
+
 function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
+    let username = api.getEntityName(myId);
+    let isAdmin = admin.includes(username);
+    let held = api.getHeldItem(myId)?.name;
     api.setCallbackValueFallback("onPlayerChangeBlock", "preventChange");
-    if (fromBlock == "Fireball Block") {
+    if (fromBlock == "Fireball Block" && !(isAdmin && held?.includes("Pickaxe"))) {
 
         resetToStarter(myId);
         return "preventChange";
@@ -246,6 +250,7 @@ customText = {
     rebirth: [-1010, -997, -1027],
     luck: [-979, -992, -1045],
     merge: [-993, -996, -992],
+    debugReset: [-1005, -997, -972],
 };
 
 shouldRunPlayerJoin = {};
@@ -706,6 +711,8 @@ oldPos = {};
 function onPlayerClickUp(myId, rc, x, y, z, block, targetEId) {
     let [lx, ly, lz] = bases[myId].lockPos;
 
+    let held = api.getHeldItem(myId);
+
     if (block.includes("Pod")) {
         api.sendMessage(myId, [{ str: "Merging doesn't work right now!" }]);
     }
@@ -728,11 +735,17 @@ function onPlayerClickUp(myId, rc, x, y, z, block, targetEId) {
             ], 10, 1000);
         }
     }
+
+    if (held?.name == "Red Paintball" && held?.attributes?.customDisplayName == "Reset Button") {
+        api.setPosition(myId, spawnPos);
+    }
 }
 
 function onPlayerLeave(myId) {
     let idx = baseNum[myId];
     clearEntireRenderedBase(myId);
+
+    setBaseLockedState(myId, "unlocked");
 
     if (bases[myId]) { delete bases[myId]; }
     if (lockTime[myId]) { delete lockTime[myId]; }
@@ -750,7 +763,11 @@ function onPlayerJoin(myId) {
 function runPlayerJoin(myId) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
 
-    api.setCanChangeBlockType(myId, "Fireball Block")
+    api.setCanChangeBlockType(myId, "Fireball Block");
+
+    api.setItemStat(myId, "Fireball Block", "ttb", 1000);
+
+    resetLaserWalkthroughs(myId);
 
     resetBrainrotsLastClaimedAt(myId);
 
@@ -1010,7 +1027,7 @@ function createLaser(x, y, z, height = 5) {
 }
 
 function removeLaser(x, y, z) {
-    for (let e of api.getEntitiesInRect([x-1, y-1, z-1], [z+1, y+10, z+1])) {
+    for (let e of api.getEntitiesInRect([x - 1, y - 1, z - 1], [z + 1, y + 10, z + 1])) {
         let type = api.getEntityType(e);
 
         if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
@@ -1024,7 +1041,7 @@ function createLockNotif(myId, pos) {
         size: [1, 1, 1],
         blockName: "Invisible Solid",
         hideDist: 10,
-    });
+    }, "lockbase");
     api.setOtherEntitySetting(myId, lockNotif, "nameTagInfo", {
         content: [
             { str: "Lock Base", style: { fontSize: "150px" } }
@@ -1243,12 +1260,14 @@ function getBrainrotById(id = []) {
 
 function clearRenderedBrainrots(myId) {
     let base = bases[myId];
+    if (!base) { return; }
     let [x1, y1, z1] = base.borders[0];
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
         let name = api.getEntityName(ent);
         //log(`${name}`);
-        if (api.getEntityType(ent) == "Mesh" && !name.includes("'") && !name.includes(`laser`)) {
+        let protectedMesh = ["lockbase", "laser"];
+        if (api.getEntityType(ent) == "Mesh" && !name.includes("'") && !protectedMesh.includes(name)) {
             api.deleteMeshEntity(ent);
         }
         else {
@@ -1333,6 +1352,26 @@ function create3dText() {
 
     let [x2, y2, z2] = customText.merge;
     api.setPosition(text2, [x2 + 0.5, y2, z2 + 0.5]);
+
+    // Debug Reset All
+    let text3 = api.attemptCreateMeshEntity("BloxdBlock", {
+        size: 1,
+        blockName: "Invisible Solid",
+        hideDist: 1000,
+    });
+
+    api.setTargetedPlayerSettingForEveryone(text3, "nameTagInfo", {
+        content: [
+            { str: "Reset All", style: { fontSize: "100px", color: "#eb1010" } }
+        ], backgroundColor: "rgba(0,0,0,0)",
+        subtitle: [
+            { str: "Debug only! Break this if your base is out of date." }
+        ]
+    });
+    //api.setTargetedPlayerSettingForEveryone(text3, "hasPriorityNametag", true);
+
+    let [x3, y3, z3] = customText.debugReset;
+    api.setPosition(text3, [x3 + 0.5, y3, z3 + 0.5]);
 }
 
 function setLightingMode(myId, on = true) {
@@ -1455,6 +1494,11 @@ function applyCustomItems(myId) {
                 "Horizontal Knockback": 1,
             }, enchantmentTier: "Tier 5"
         }
+    });
+
+    api.setItemSlot(myId, 1, "Red Paintball", 1, {
+        customDisplayName: "Reset Button",
+        customDescription: "Click to get sent back to spawn.",
     });
 
     api.setItemSlot(myId, 7, "Gold Bar", 1, {
@@ -1594,4 +1638,39 @@ function resetToStarter(myId) {
     api.setPlayerDbValue(myId, "coins", 1000);
 
     api.sendMessage(myId, [{ str: `Reset brainrots and coins.` }]) 
+}
+
+function onPlayerDropItem(myId, x, y, z, itemName, itemAmount, fromIdx) {
+    let username = api.getEntityName(myId);
+    if (!admin.includes(username)) { return "preventDrop"; }
+}
+
+function resetLaserWalkthroughs(p) {
+    for (let base of basesConfig) {
+
+        let lsp = base.laserStartPos;
+        api.setWalkThroughRect(p, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 2);
+
+        let otherLasers = base.otherLasers;
+        for (let laser of otherLasers) {
+            let [olx, oy, oz] = laser;
+            api.setWalkThroughRect(p, [olx, oy + 1, oz], [olx, oy + 3, oz], 2);
+        }
+
+    }
+}
+
+function resetLaserWalkthroughsForEveryone() {
+    for (let base of basesConfig) {
+        for (let p of api.getPlayerIds()) {
+            let lsp = base.laserStartPos;
+            api.setWalkThroughRect(p, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 2);
+
+            let otherLasers = base.otherLasers;
+            for (let laser of otherLasers) {
+                let [olx, oy, oz] = laser;
+                api.setWalkThroughRect(p, [olx, oy + 1, oz], [olx, oy + 3, oz], 2);
+            }
+        }
+    }
 }
