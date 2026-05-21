@@ -44,7 +44,6 @@ function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fro
     let held = api.getHeldItem(myId)?.name;
     api.setCallbackValueFallback("onPlayerChangeBlock", "preventChange");
     if (fromBlock == "Fireball Block" && !(isAdmin && held?.includes("Pickaxe"))) {
-
         resetToStarter(myId);
         return "preventChange";
     }
@@ -518,9 +517,13 @@ let consec = 0; let wait = 0; function tick() {
             let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
             //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
             if (hasAdded) {
+                api.applyImpulse(mobId, 1, 1, 1);
+                let pos = api.getPosition(mobId);
+                let [x, y, z] = pos;
+                
                 api.log(`Let's try to despawn ${mobId}`);
-                //api.setPosition(mobId, ...brainrotDeathPos);
-                //api.despawnMob(mobId);
+                //api.setPosition(mobId, [x, y+5, z]);
+                api.despawnMob(mobId);
 
                 removeCoins(myId, cost);
                 api.sendMessage(myId, [{ str: `Purchased brainrot.` }]);
@@ -654,7 +657,7 @@ let consec = 0; let wait = 0; function tick() {
                     } catch (err) {
                         //api.log(`Failed to despawn mob (${m})\n\nError: ${JSON.stringify(err)}`); 
                     }
-                    mobs.splice(m, 1);
+                    mobs.splice(mNum, 1);
                 };
 
                 let [x, y, z] = [null, null, null];
