@@ -77,14 +77,16 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         return "preventDamage";
     }
     // Make this check not affect upgrades
+
+    let preventPurchase = false;
     let ownedBrainrots = getBrainrots(myId);
     if (beingStolenFrom[myId] && ownedBrainrots.length >= maxBrainrots) {
         api.sendMessage(myId, [{ str: "You still have a chance to get back that stolen brainrot!" }]);
-        return "preventDamage";
+        preventPurchase = true;
     }
     else if (ownedBrainrots.length - 1 >= maxBrainrots) {
         api.sendMessage(myId, [{ str: "You have too many brainrots!" }]);
-        return "preventDamage";
+        preventPurchase = true;
     }
 
     let mob = "undecided";
@@ -151,30 +153,39 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     }
     let rarityId = null;
 
-    //api.log("---");
-    //api.log(mob);
-    outer:
-    for (let rarity of brainrots) {
-        for (let e of rarity.ents) {
-            //api.log(e);
-            if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
-                rarityId = rarity.cid;
-                break outer;
+    if (!preventPurchase) {
+        //api.log("---");
+        //api.log(mob);
+        outer:
+        for (let rarity of brainrots) {
+            for (let e of rarity.ents) {
+                //api.log(e);
+                if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
+                    rarityId = rarity.cid;
+                    break outer;
+                }
             }
         }
-    }
+        let coins = api.getPlayerDbValue(myId, "coins");
+        let cost = mob.brainrotData.data.cost;
+        if (coins >= cost) {
+            let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
+            //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+            if (hasAdded) {
+                api.despawnMob(mobId);
 
-    let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
-    //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
-    if (hasAdded) {
-        api.despawnMob(mobId);
+                let base = bases[myId];
 
-        let base = bases[myId];
+                clearRenderedBrainrots(myId);
+                updateBrainrots(myId, base.brainrotPlatforms);
+            } else {
 
-        clearRenderedBrainrots(myId);
-        updateBrainrots(myId, base.brainrotPlatforms);
-    } else {
-
+            }
+            removeCoins(myId, cost);
+            api.sendMessage(myId, [{ str: `Purchased brainrot.` }]);
+        } else {
+            api.sendMessage(myId, [{ str: `Not enough coins! You need ${cost - coins} more coins.` }]);
+        }
     }
 
     return "preventDamage";
