@@ -1,4 +1,4 @@
-//update: a
+//update: aaa
 
 /*
 === TODO ===
@@ -35,6 +35,8 @@ Failed steal:
 claimingStart = 1779157161692;
 
 spawnPos = [-999, -996, -999];
+
+purchaseMob = [];
 
 function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
     let username = api.getEntityName(myId);
@@ -73,6 +75,8 @@ function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem,
 stealing = {};
 beingStolenFrom = {};
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    api.setCallbackValueFallback("onPlayerDamagingMob", "preventDamage");
+
     if (stealing[myId]) {
         api.sendMessage(myId, [{ str: "Can't interact with other brainrots while stealing." }]);
         return "preventDamage";
@@ -177,21 +181,9 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
         let coins = api.getPlayerDbValue(myId, "coins");
         let cost = mob.brainrotData.data.cost;
         if (coins >= cost) {
-            let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
-            //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
-            if (hasAdded) {
-                api.log(`Let's try to despawn ${mobId}`);
-                //api.despawnMob(mobId);
+            purchaseMob.push({ myId: myId, mobId: mobId, mob: mob, rarityId: rarityId });
 
-                let base = bases[myId];
-
-                clearRenderedBrainrots(myId);
-                updateBrainrots(myId, base.brainrotPlatforms);
-            } else {
-
-            }
-            removeCoins(myId, cost);
-            api.sendMessage(myId, [{ str: `Purchased brainrot.` }]);
+            return "preventDamage";
         } else {
             api.sendMessage(myId, [{ str: `Not enough coins! You need ${cost - coins} more coins.` }]);
         }
@@ -460,7 +452,7 @@ let lavaPos = [-999, -1002, -941];
 brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
 
-let spawnFreq = 23;
+let spawnFreq = 20;
 const maxConsec = 1;
 const waitNum = 5;
 
@@ -501,7 +493,9 @@ let tickNum = 0;
 let tickNum2 = 0;
 
 let consec = 0; let wait = 0; function tick() {
-    tickNum2 = (tickNum2 + 1) % 4; if (api.isNearInterrupt() || tickNum2 != 0) { return; }
+    //return;
+    tickNum2 = (tickNum2 + 1) % 5; if (tickNum2 != 0) { return; }
+    if (api.isNearInterrupt()) { return; }
     // if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
 
     players = api.getPlayerIds();
@@ -509,16 +503,38 @@ let consec = 0; let wait = 0; function tick() {
     pNum = (pNum + 1) % (players.length + 1);
     tickNum++;
 
-    if (oldPlayers != players) {
-        for (let p of oldPlayers) {
-            if (!players.includes(p)) {
-                beginRunPlayerJoin(p);
-            }
-        }
-    }
-
     if (pNum == players.length) {
         // world tick
+
+        if (purchaseMob[0]) {
+            let myId = purchaseMob[0].myId;
+            let mobId = purchaseMob[0].mobId;
+            let mob = purchaseMob[0].mob;
+            let rarityId = purchaseMob[0].rarityId;
+
+            let coins = api.getPlayerDbValue(myId, "coins");
+            let cost = mob.brainrotData.data.cost;
+
+            let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
+            //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
+            if (hasAdded) {
+                api.log(`Let's try to despawn ${mobId}`);
+                //api.setPosition(mobId, ...brainrotDeathPos);
+                //api.despawnMob(mobId);
+
+                removeCoins(myId, cost);
+                api.sendMessage(myId, [{ str: `Purchased brainrot.` }]);
+
+                let base = bases[myId];
+
+                clearRenderedBrainrots(myId);
+                updateBrainrots(myId, base.brainrotPlatforms);
+            } else {
+
+            }
+            purchaseMob.splice(0, 1);
+        }
+
         if (toHide.length > 0) {
             for (let hNum in toHide) {
                 let h = toHide[hNum];
@@ -609,7 +625,7 @@ let consec = 0; let wait = 0; function tick() {
                 let [x, y, z] = brainrotSpawnPos;
 
                 let rarity = randomRarity();
-                let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+                /*let mob = api.attemptSpawnMob("NPC", ...[-999, -1005, -1033]); //previously*/ let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
                 //api.log(`Spawned mob ${mob}`)
 
                 let brainrotPool = brainrots[rarity.idx].ents;
@@ -625,23 +641,37 @@ let consec = 0; let wait = 0; function tick() {
                 let m = mobs[mNum].id;
 
                 const remove = (m, mesh, mNum) => {
-                    api.log(`== Removing mob ==`);
-                    try { api.deleteMeshEntity(mesh); api.log(`Removed mesh`); } catch (err) { api.log(`Failed to remove mesh (${mesh})\n\nError: ${JSON.stringify(err)}`); }
-                    try { api.despawnMob(m); api.log(`Despawned mob`); } catch (err) { api.log(`Failed to despawn mob (${m})\n\nError: ${JSON.stringify(err)}`); }
+                    //api.log(`== Removing mob ==`);
+                    try {
+                        api.deleteMeshEntity(mesh);
+                        //api.log(`Removed mesh`); 
+                    } catch (err) {
+                        // api.log(`Failed to remove mesh (${mesh})\n\nError: ${JSON.stringify(err)}`); 
+                    }
+                    try {
+                        api.despawnMob(m);
+                        //api.log(`Despawned mob`); 
+                    } catch (err) {
+                        //api.log(`Failed to despawn mob (${m})\n\nError: ${JSON.stringify(err)}`); 
+                    }
                     mobs.splice(m, 1);
                 };
 
                 let [x, y, z] = [null, null, null];
                 try { [x, y, z] = api.getPosition(m); } catch (err) {
-                    api.log(`Failed to get position of ${m}. Removing.\n\nError: ${JSON.stringify(err)}`);
+                    //api.log(`Failed to get position of ${m}. Removing.\n\nError: ${JSON.stringify(err)}`);
                     remove(m, mobs[mNum]?.mesh, mNum); continue;
                 }
 
                 let mesh = mobs[mNum].mesh;
+
+                //api.setPosition(m, brainrotSpawnPos);
                 api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
+
                 if (mobs[mNum].invisibleCount > 0) {
                     if (hideMobs) {
                         api.applyEffect(m, "Invisible", null, {});
+
                     }
                     if (mobs[mNum].invisibleCount <= 1) {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
@@ -650,7 +680,7 @@ let consec = 0; let wait = 0; function tick() {
                 }
 
                 if (z >= brainrotDeathPos[2]) {
-                    api.log(`Close to death. Removing.`);
+                    //api.log(`Close to death. Removing.`);
                     remove(m, mesh, mNum);
                 }
             }
@@ -934,7 +964,7 @@ function runPlayerJoin(myId) {
             blockName: "Invisible Solid",
             size: 1,
         }, `${username}'s Base`);
-        
+
         api.setPosition(nametag, bases[myId].nametagPos);
         base.nametag = nametag;
         updateBaseNametag(myId, true);
@@ -1194,7 +1224,7 @@ function updateBrainrots(myId, spawnAt) {
         });
         api.setPosition(mesh, x + 0, y + 0, z + 0);
 
-        let mob = api.attemptSpawnMob("Draugr Zombie", ...brainrotSpawnPos);
+        let mob = api.attemptSpawnMob("Draugr Zombie", 0, 0, 0);
         let rarityName = b.rarityName;
         let level = b.level;
         //api.log(`Called updateBrainrots`)
