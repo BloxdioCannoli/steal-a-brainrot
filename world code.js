@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaaaaaaaa
+//update: aaaaaaaaaaaaaaaaaaa
 
 /*
 === TODO ===
@@ -28,9 +28,20 @@ Failed steal:
 - onPlayerJoin not fully registering on interrupt
 - some brainrot mesh not being removed (seems like a Bloxd bug)
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
+- function to clear laser mesh clears ALL laser mesh
+- there seems to be an issue where player coins are synced
 */
 
 claimingStart = 1779157161692;
+
+function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
+    api.setCallbackValueFallback("onPlayerChangeBlock", "preventChange");
+    if (fromBlock == "Fireball Block") {
+
+        resetToStarter(myId);
+        return "preventChange";
+    }
+}
 
 function refreshBrainrotRender(myId) {
     let base = bases[myId];
@@ -739,6 +750,8 @@ function onPlayerJoin(myId) {
 function runPlayerJoin(myId) {
     if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
 
+    api.setCanChangeBlockType(myId, "Fireball Block")
+
     resetBrainrotsLastClaimedAt(myId);
 
     let username = api.getEntityName(myId);
@@ -997,7 +1010,7 @@ function createLaser(x, y, z, height = 5) {
 }
 
 function removeLaser(x, y, z) {
-    for (let e of api.getEntitiesInRect([-10000, -10000, -10000], [10000, 10000, 10000])) {
+    for (let e of api.getEntitiesInRect([x-1, y-1, z-1], [z+1, y+10, z+1])) {
         let type = api.getEntityType(e);
 
         if (type == "Mesh") { if (api.getEntityName(e) == "laser") { api.deleteMeshEntity(e); } }
@@ -1578,8 +1591,7 @@ function resetBrainrotsLastClaimedAt(myId) {
 
 function resetToStarter(myId) {
     resetBrainrots(myId);
-    api.setPlayerDbValue(myId, "coins", 0);
-    api.giveItem(myId, "Gold Coin", 1000);
+    api.setPlayerDbValue(myId, "coins", 1000);
 
     api.sendMessage(myId, [{ str: `Reset brainrots and coins.` }]) 
 }
