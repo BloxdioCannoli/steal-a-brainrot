@@ -244,7 +244,7 @@ playerJoinLevel = {};
 
 enableLighting = true;
 
-admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt"];
+admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt", "SubTo_javisthejavisyt"];
 
 customText = {
     rebirth: [-1010, -997, -1027],
