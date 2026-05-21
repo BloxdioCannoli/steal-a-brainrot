@@ -3,21 +3,6 @@
 /*
 === TODO ===
 
-== stealing brainrots from other players ==
-General:
-- Store the claimable coins somewhere else during steal process?
-On attempt steal:
-1. Give the player the effect and display of holding a brainrot
-2. Remove the brainrot from the player's database (re-add if the thief leaves)
-Succesful steal:
-1. Add the brainrot to the thief's database and re-render
-2. Remove the effect and display
-Failed steal:
-1. Re-add the brainrot to the owner's DB
-2. Remove the effect and display
-
-- invis solid not removed when a player leaves with an active base lock
-
 - players who leave when initializing or in some other cases break the code forever
 
 === Important Helper Functions ===
@@ -25,11 +10,9 @@ Failed steal:
 
 === BUGS ===
 
-- onPlayerJoin not fully registering on interrupt
 - some brainrot mesh not being removed (seems like a Bloxd bug)
 - ensure proper sizing and offset for blocks like "Diamond Bloxd"
-- there seems to be an issue where player coins are synced
-- attacked brainrot sometimes (possibly) gets removed from the list of brainrots to move
+- there seems to be an issue where player coins are not synced
 */
 
 claimingStart = 1779157161692;
