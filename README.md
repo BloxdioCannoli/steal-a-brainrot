@@ -1,4 +1,3 @@
-# steal-a-brainrot
+# Steal a Brainrot
 
-- add some kind of way for "legacy brainrots" to exist, be removed from `brainrots` array, and be in a different array that is also checked when retrieving.
-- fallback values
+All code by me, BloxdioCannoli. Thanks to javis for paying me, and thanks to [GlitchHunter's repo](https://github.com/GlitchHunterCoder/Bloxd.io-API-code/blob/main/Blocks.txt) for the blocknames!
