@@ -3,7 +3,7 @@
 /*
 === TODO ===
 
-- players who leave when initializing or in some other cases break the code forever
+- players who leave when initializing or in some other cases break the code forever (seems to be fixed FOR THE MOST PART)
 
 === Important Helper Functions ===
 
@@ -77,6 +77,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     }
 
     let mob = "undecided";
+    if (!playerBrainrotIds[myId]) { playerBrainrotIds[myId] = {}; }
     if (!playerBrainrotIds[myId][mobId]) {
         for (let m of mobs) {
             if (m.id == mobId) { mob = m; }
@@ -502,7 +503,7 @@ let consec = 0; let wait = 0; function tick() {
             if (hasAdded) {
                 let pos = api.getPosition(mobId);
                 let [x, y, z] = pos;
-                
+
                 //api.log(`Let's try to despawn ${mobId}`);
                 //api.setPosition(mobId, [x, y+5, z]);
                 api.despawnMob(mobId);
