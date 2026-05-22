@@ -1,4 +1,4 @@
-//update: aaaaaa
+//update: aaaaaaaa
 
 /*
 === TODO ===
@@ -467,6 +467,8 @@ let defBaseNametag = {
 
 let defLockTime = 30;
 
+let nextSpawnAt = api.now();
+
 let lockedBases = {};
 let lockTime = {};
 
@@ -476,10 +478,12 @@ let baseNum = {};
 let tickNum = 0;
 
 let tickNum2 = 0;
+let tickNum3 = 0;
 
 let consec = 0; let wait = 0; function tick() {
     //return;
     tickNum2 = (tickNum2 + 1) % 5; if (tickNum2 != 0) { return; }
+
     if (api.isNearInterrupt()) { return; }
     // if (wait > 0) { wait--; return; } else { if (consec >= maxConsec) { consec = 0; wait = waitNum; } else { consec++; } };
 
@@ -609,18 +613,23 @@ let consec = 0; let wait = 0; function tick() {
 
         // full world tick
         if (tickNum >= startWorldTickAt) {
-            if (tickNum % (spawnFreq) == 1) {
-                let [x, y, z] = brainrotSpawnPos;
+            tickNum3 = (tickNum3 + 1) % 2;
 
-                let rarity = randomRarity();
-                let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
-                //api.log(`Spawned mob ${mob}`)
+            if (tickNum3 == 0) {
+                if (nextSpawnAt <= api.now()) {
+                    let [x, y, z] = brainrotSpawnPos;
 
-                let brainrotPool = brainrots[rarity.idx].ents;
-                let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
+                    let rarity = randomRarity();
+                    let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+                    //api.log(`Spawned mob ${mob}`)
 
-                if (mob) {
-                    spawnBrainrotEntity(mob, brainrotData, rarity.name, x, y, z);
+                    let brainrotPool = brainrots[rarity.idx].ents;
+                    let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
+
+                    if (mob) {
+                        spawnBrainrotEntity(mob, brainrotData, rarity.name, x, y, z);
+                    }
+                    nextSpawnAt = api.now() + 10000;
                 }
             }
 
@@ -1261,7 +1270,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
         brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
         //api.log(mobs[mobs.length - 1]);
-    } else { return }
+    } else { return; }
 
     rarityParticles(rarityName);
     return true;
@@ -1738,7 +1747,7 @@ function rarityParticles(rarity) {
             [86, 49, 232, 0.5],
         ],
     };
-    if (!rarityRgb[rarity]) { return false ;}
+    if (!rarityRgb[rarity]) { return false; }
 
     api.playParticleEffect({
         dir1: [-1, -1, 1],
