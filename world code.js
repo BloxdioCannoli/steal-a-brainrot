@@ -1,4 +1,4 @@
-//update: aaaaaaaa
+//update: aaaaaaaaa
 
 /*
 === TODO ===
@@ -14,6 +14,8 @@
 - there seems to be an issue where player coins are not synced
 - brainrots sometimes do not start spawning - maybe due to badly-timed interruptions
 */
+
+removeEffectCooldown = {}; // for effects that are removed on click
 
 claimingStart = 1779157161692;
 
@@ -57,6 +59,8 @@ function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem,
 stealing = {};
 beingStolenFrom = {};
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
+    let held = (api.getHeldItem(myId)?.name ?? "");
+    if (held.includes("Sword")) { return; }
     api.setCallbackValueFallback("onPlayerDamagingMob", "preventDamage");
 
     if (stealing[myId]) {
@@ -188,6 +192,13 @@ function getHeldActionType(myId) {
     if (customName == "Bat") { return "bat"; }
 
     if (customName == "Reset Button") { return "resetbutton"; }
+
+    if (customName == "67 Saddle") { return "67saddle"; }
+    if (customName == "Galaxy Bat") { return "galaxybat"; }
+    if (customName == "Freeze Ray") { return "freezeray"; }
+    if (customName == "Swap Crystal") { return "swapcrystal"; }
+    if (customName == "Invisibility Hat") { return "invisibilityhat"; }
+    if (customName == "Flashbang") { return "flashbang"; }
 
     return null;
 }
@@ -686,6 +697,10 @@ let consec = 0; let wait = 0; function tick() {
         // player tick
         pId = players[pNum];
 
+        if (removeEffectCooldown[pId] && removeEffectCooldown[pId] > 0) {
+            removeEffectCooldown[pId]--;
+        }
+
         if (!playerJoinLevel[pId]) {
             beginRunPlayerJoin(pId);
         }
@@ -771,6 +786,20 @@ let consec = 0; let wait = 0; function tick() {
 oldPos = {};
 
 function onPlayerClickUp(myId, rc, x, y, z, block, targetEId) {
+    if (getHeldActionType(myId) == "67saddle") {
+        if (api.hasEffect(myId, "riding67")) {
+            stopRiding67(myId);
+            api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
+        } else {
+            if (!api.hasEffect(myId, "67saddlecooldown")) {
+                ride67(myId, "67");
+            }
+        }
+    }
+    if (removeEffectCooldown[pId] <= 0) {
+        stopRiding67(myId);
+    }
+
     let [lx, ly, lz] = bases[myId].lockPos;
 
     let held = api.getHeldItem(myId);
@@ -1478,11 +1507,20 @@ function ride67(myId, brainrotName = "67 Statue") {
         blockName: "67 Statue",
     }, [-0.1, -0.1, -0.7], [1.5, 0, 0]);
 
-    api.applyEffect(myId, "riding67", null, { icon: "Light Blue Neon", displayName: `Riding 67` });
+    api.applyEffect(myId, "riding67", null, { icon: "67 Base Projectile", displayName: `Riding 67` });
     api.applyEffect(myId, "Speed", 0, { inbuiltLevel: 3 });
 
     api.setClientOption(myId, "jumpAmount", 0);
     api.setClientOption(myId, "airJumpCount", 0);
+
+    api.setTargetedPlayerSettingForEveryone(myId, "nameTagInfo", {
+        subtitle: [
+            { str: "Riding " },
+            { str: `67`, style: { color: "lightgray" } }
+        ], subtitleBackgroundColor: "rgba(0,0,0,0)"
+    });
+
+    removeEffectCooldown[pId] = 5;
 }
 
 function stopRiding67(myId) {
@@ -1495,6 +1533,8 @@ function stopRiding67(myId) {
 
     api.setClientOption(myId, "jumpAmount", 8);
     api.setClientOption(myId, "airJumpCount", 0);
+
+    api.setTargetedPlayerSettingForEveryone(myId, "nameTagInfo", {});
 }
 
 function isInOwnBase(myId) {
@@ -1531,7 +1571,7 @@ function applyCustomItems(myId) {
             enchantments: {
                 "Vertical Knockback": 1,
                 "Horizontal Knockback": 1,
-            }, enchantmentTier: "Tier 5"
+            }, enchantmentTier: "Tier 4"
         }
     });
 
