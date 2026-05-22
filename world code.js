@@ -785,19 +785,22 @@ let consec = 0; let wait = 0; function tick() {
 }
 oldPos = {};
 
-function onPlayerClickUp(myId, rc, x, y, z, block, targetEId) {
+function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
     if (getHeldActionType(myId) == "67saddle") {
         if (api.hasEffect(myId, "riding67")) {
+        if (removeEffectCooldown[myId] <= 0 && !api.hasEffect(myId, "67saddlecooldown")) {
             stopRiding67(myId);
             api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
+        }
         } else {
             if (!api.hasEffect(myId, "67saddlecooldown")) {
                 ride67(myId, "67");
             }
         }
     }
-    if (removeEffectCooldown[pId] <= 0) {
+    if (removeEffectCooldown[myId] <= 0 && !api.hasEffect(myId, "67saddlecooldown")) {
         stopRiding67(myId);
+        api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
     }
 
     let [lx, ly, lz] = bases[myId].lockPos;
@@ -1520,7 +1523,7 @@ function ride67(myId, brainrotName = "67 Statue") {
         ], subtitleBackgroundColor: "rgba(0,0,0,0)"
     });
 
-    removeEffectCooldown[pId] = 5;
+    removeEffectCooldown[pId] = 1;
 }
 
 function stopRiding67(myId) {
