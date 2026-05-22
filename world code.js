@@ -1012,7 +1012,7 @@ brainrots = [
     {
         ents: [
             { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 0 },
-            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 1 },
+            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino Statue", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 1 },
         ], name: "Legendary", chance: 0.1, cid: 3,
     },
 
