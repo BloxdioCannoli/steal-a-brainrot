@@ -1,4 +1,4 @@
-//update: aaaaa
+//update: aaaaaa
 
 /*
 === TODO ===
@@ -93,6 +93,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
                     }
                 }
 
+                if (!playerBrainrotIds[stealingFrom]) { playerBrainrotIds[stealingFrom] = {}; }
                 let ownedInfo = playerBrainrotIds[stealingFrom][mobId];
                 let dbIdx = ownedInfo.idx;
                 let ownedBrainrots = getBrainrots(stealingFrom);
@@ -118,6 +119,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
             }
         }
     } else {
+        if (!playerBrainrotIds[myId]) { playerBrainrotIds[myId] = {}; }
         let ownedInfo = playerBrainrotIds[myId][mobId];
         let dbIdx = ownedInfo.idx;
         let dbValue = ownedBrainrots[dbIdx];
@@ -1259,7 +1261,10 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
         brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
         //api.log(mobs[mobs.length - 1]);
-    }
+    } else { return }
+
+    rarityParticles(rarityName);
+    return true;
 }
 
 function getBrainrotById(id = []) {
@@ -1706,4 +1711,64 @@ function resetLaserWalkthroughsForEveryone() {
             }
         }
     }
+}
+
+function rarityParticles(rarity) {
+    let [x, y, z] = brainrotSpawnPos;
+
+    let rarityRgb = {
+        "Common": [
+            [255, 250, 247, 1],
+            [255, 250, 247, 0.5],
+        ],
+        "Uncommon": [
+            [65, 252, 3, 1],
+            [65, 252, 3, 0.5],
+        ],
+        "Rare": [
+            [3, 144, 252, 1],
+            [3, 144, 252, 0.5],
+        ],
+        "Legendary": [
+            [232, 214, 49, 1],
+            [232, 214, 49, 0.5],
+        ],
+        "Mythical": [
+            [86, 49, 232, 1],
+            [86, 49, 232, 0.5],
+        ],
+    };
+    if (!rarityRgb[rarity]) { return false ;}
+
+    api.playParticleEffect({
+        dir1: [-1, -1, 1],
+        dir2: [1, 1, 2],
+        pos1: [x - 2, y - 1, z - 1],
+        pos2: [x + 2, y + 2, z + 1],
+        texture: "glint",
+        minLifeTime: 1.0,
+        maxLifeTime: 1.0,
+        minEmitPower: 3,
+        maxEmitPower: 3,
+        minSize: 0.3,
+        maxSize: 0.3,
+        manualEmitCount: 30,
+        gravity: [0, -10, 0],
+        colorGradients: [
+            {
+                timeFraction: 0,
+                minColor: rarityRgb[rarity][0],
+                maxColor: rarityRgb[rarity][1],
+            },
+        ],
+        velocityGradients: [
+            {
+                timeFraction: 0,
+                factor: 1,
+                factor2: 1,
+            },
+        ],
+        blendMode: 1,
+    });
+    return true;
 }
