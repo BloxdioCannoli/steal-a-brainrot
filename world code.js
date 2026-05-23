@@ -1,4 +1,4 @@
-//update: aaaaaaaaa
+//update: a
 
 /*
 === TODO ===
@@ -15,11 +15,11 @@
 - brainrots sometimes do not start spawning - maybe due to badly-timed interruptions
 */
 
-removeEffectCooldown = {}; // for effects that are removed on click
-
 claimingStart = 1779157161692;
 
 spawnPos = [-999, -996, -999];
+
+hasPlayedParticle = {};
 
 purchaseMob = [];
 
@@ -445,7 +445,7 @@ function getBrainrotValue(myId, idx, key) {
 
 let lavaPos = [-999, -1002, -941];
 
-brainrotSpawnPos = [-999, -999, -1025];
+brainrotSpawnPos = [-999, -999, -1026];
 brainrotDeathPos = [-999, -997, -942.5];
 
 let spawnFreq = 20;
@@ -631,7 +631,9 @@ let consec = 0; let wait = 0; function tick() {
                     let [x, y, z] = brainrotSpawnPos;
 
                     let rarity = randomRarity();
-                    let mob = api.attemptSpawnMob("NPC", ...brainrotSpawnPos);
+                    let [spawnx, spawny, spawnz] = brainrotSpawnPos;
+                    let mob = api.attemptSpawnMob("NPC", ...[0, 0, spawnz]); //...brainrotSpawnPos
+                    hasPlayedParticle[mob] = false;
                     //api.log(`Spawned mob ${mob}`)
 
                     let brainrotPool = brainrots[rarity.idx].ents;
@@ -673,7 +675,8 @@ let consec = 0; let wait = 0; function tick() {
 
                 let mesh = mobs[mNum].mesh;
 
-                //api.setPosition(m, brainrotSpawnPos);
+                let [spawnx, spawny, spawnz] = brainrotSpawnPos;
+
                 api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
 
                 if (mobs[mNum].invisibleCount > 0) {
@@ -683,8 +686,16 @@ let consec = 0; let wait = 0; function tick() {
                     }
                     if (mobs[mNum].invisibleCount <= 1) {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
+                        api.setPosition(m, [spawnx, spawny, spawnz + 1]);
                     }
                     mobs[mNum].invisibleCount--;
+                } else {
+                    if (!hasPlayedParticle[mob.id]) {
+                        rarityParticles(mobs[mNum].rarityName);
+                        hasPlayedParticle[mob.id] = true;
+                    } else {
+
+                    }
                 }
 
                 if (z >= brainrotDeathPos[2]) {
@@ -696,10 +707,6 @@ let consec = 0; let wait = 0; function tick() {
     } else {
         // player tick
         pId = players[pNum];
-
-        if (removeEffectCooldown[pId] && removeEffectCooldown[pId] > 0) {
-            removeEffectCooldown[pId]--;
-        }
 
         if (!playerJoinLevel[pId]) {
             beginRunPlayerJoin(pId);
@@ -788,19 +795,15 @@ oldPos = {};
 function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
     if (getHeldActionType(myId) == "67saddle") {
         if (api.hasEffect(myId, "riding67")) {
-        if (removeEffectCooldown[myId] <= 0 && !api.hasEffect(myId, "67saddlecooldown")) {
-            stopRiding67(myId);
-            api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
-        }
+            if (!api.hasEffect(myId, "67saddlecooldown")) {
+                stopRiding67(myId);
+                api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
+            }
         } else {
             if (!api.hasEffect(myId, "67saddlecooldown")) {
                 ride67(myId, "67");
             }
         }
-    }
-    if (removeEffectCooldown[myId] <= 0 && !api.hasEffect(myId, "67saddlecooldown")) {
-        stopRiding67(myId);
-        api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
     }
 
     let [lx, ly, lz] = bases[myId].lockPos;
@@ -1304,8 +1307,11 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
         //api.log(mobs[mobs.length - 1]);
     } else { return; }
 
-    rarityParticles(rarityName);
+    //rarityParticles(rarityName);
     return true;
+
+    api.setPosition(mesh, [0, 0, 0]);
+    api.setPosition(mob, [0, 0, 0]);
 }
 
 function getBrainrotById(id = []) {
@@ -1522,8 +1528,6 @@ function ride67(myId, brainrotName = "67 Statue") {
             { str: `67`, style: { color: "lightgray" } }
         ], subtitleBackgroundColor: "rgba(0,0,0,0)"
     });
-
-    removeEffectCooldown[pId] = 1;
 }
 
 function stopRiding67(myId) {
