@@ -15,6 +15,15 @@
 - brainrots sometimes do not start spawning - maybe due to badly-timed interruptions
 */
 
+toload = [
+    [1000, 1000, 1000],
+    [1000, 1000, 999],
+    [1000, 1000, 998],
+    [1000, 1000, 997],
+];
+
+loadedcallbacks = [""];
+
 claimingStart = 1779157161692;
 
 spawnPos = [-999, -996, -999];
@@ -823,3 +832,6 @@ function onPlayerDropItem(myId, x, y, z, itemName, itemAmount, fromIdx) {
     let username = api.getEntityName(myId);
     if (!admin.includes(username)) { return "preventDrop"; }
 }
+
+
+const loadwait = 5, loaddelay = 25, showlogs = true; let starttime = null, warmUp = api.getBlock(...toload[0]), loaded = false, startloading = false, ticknum = 0; function onPlayerJoin(myId) { playerids = api.getPlayerIds(); ticks = toload.length * loadwait + loaddelay; if (!loaded && startloading) { starttime = api.now(); let estimatedTime = { ticks: ticks, seconds: 20 * ticks / 1e3, ms: 20 * ticks }; try { onDelayStart(estimatedTime); } catch { } if (showlogs) api.log(`Functions not loaded. Loading will finish in ${ticks} ticks! (${20 * ticks}ms or ${20 * ticks / 1e3}seconds)`); } } function tick() { ticknum++; if (ticknum > loaddelay && !startloading) { estimatedTime = { ticks: ticks - loaddelay, seconds: 20 * (ticks - loaddelay) / 1e3, ms: 20 * (ticks - loaddelay) }; try { onLoadStart(estimatedTime); } catch { } startloading = true; ticknum = -1; } if (startloading) { exctick = ticknum % loadwait == 0; excnum = Math.floor(ticknum / loadwait); if (excnum < toload.length) { if (exctick) { codepos = toload[excnum]; let block = api.getBlock(...codepos), codedata = api.getBlockData(...codepos)?.persisted?.shared?.text; globalThis.eval(codedata); if (block == "Unloaded") excnum--; if (showlogs) if (codedata != undefined && block == "Code Block") api.log(`Value from ${block} loaded`); else api.log(`There is no code block with valid block data at ${codepos}`); } } else { loaded = true; let finishedms = api.now() - starttime; estimatedTime = { ticks: finishedms / 20, seconds: finishedms / 1e3, ms: finishedms }; try { onLoadEnd(estimatedTime); } catch { } } } }
