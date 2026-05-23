@@ -1,4 +1,4 @@
-//update: a
+//update: aa
 
 /*
 === TODO ===
@@ -802,6 +802,17 @@ function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
         } else {
             if (!api.hasEffect(myId, "67saddlecooldown")) {
                 ride67(myId, "67");
+            }
+        }
+    } else if (getHeldActionType(myId) == "invisibilityhat") {
+        if (api.hasEffect(myId, "invisibilityhat")) {
+            if (!api.hasEffect(myId, "invisibilityhatcooldown")) {
+                api.removeEffect(myId, "invisibilityhat")
+                api.applyEffect(myId, "invisibilityhatcooldown", 15000, { icon: "Black Concrete Slab", displayName: "Invisibility Hat Cooldown" });
+            }
+        } else {
+            if (!api.hasEffect(myId, "invisibilityhatcooldown")) {
+               api.applyEffect(myId, "invisibilityhat", null, {displayName: "Using Invisibility Hat", icon: "Invisible"})
             }
         }
     }
@@ -1826,5 +1837,4 @@ function rarityParticles(rarity) {
         ],
         blendMode: 1,
     });
-    return true;
 }
