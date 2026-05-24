@@ -366,5 +366,3 @@ function getHeldActionType(myId) {
 
     return null;
 }
-
-api.log("2 loaded")
