@@ -649,5 +649,3 @@ function addCoins(myId, add) {
     api.setPlayerDbValue(pId, "coins", coins);
     api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
 }
-
-api.log("1 loaded")
