@@ -1,10 +1,10 @@
 function removeCoins(myId, remove) {
-    let coins = api.getPlayerDbValue(pId, "coins");
+    let coins = api.getPlayerDbValue(myId, "coins");
 
     coins -= remove;
 
-    api.setPlayerDbValue(pId, "coins", coins);
-    api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
+    api.setPlayerDbValue(myId, "coins", coins);
+    api.applyEffect(myId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
 }
 
 function claimCoins(myId, brainrotIdx) {
@@ -136,7 +136,7 @@ function resetLaserWalkthroughsForEveryone() {
 }
 
 function rarityParticles(rarity) {
-    let [x, y, z] = brainrotSpawnPos;
+    let [x, y, z] = [...brainrotSpawnPos];
 
     let rarityRgb = {
         "Common": [
@@ -192,6 +192,7 @@ function rarityParticles(rarity) {
         ],
         blendMode: 1,
     });
+    return true;
 }
 
 function runPlayerJoin(myId) {
