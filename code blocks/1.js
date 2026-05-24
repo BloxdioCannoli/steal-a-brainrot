@@ -311,8 +311,9 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
         blockName: (brainrotData.blockName),
         hideDist: hideDist,
     });
-    api.setPosition(mesh, x, y, z);
-
+    //api.setPosition(mesh, x, y, z);
+    api.setPosition(mesh, 0, 0, 0);
+    
     api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
 
     if (mesh) {
@@ -327,14 +328,19 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
         });
         brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
+
+        //api.log(`Added to mobs array.`)
         //api.log(mobs[mobs.length - 1]);
-    } else { return; }
+    } else { return false; }
 
     //rarityParticles(rarityName);
-    return true;
 
     api.setPosition(mesh, [0, 0, 0]);
     api.setPosition(mob, [0, 0, 0]);
+
+    //api.log(`Created brainrot mesh`)
+
+    return true;
 }
 
 function getBrainrotById(id = []) {
@@ -642,10 +648,10 @@ function deMinifyTime(time) {
 }
 
 function addCoins(myId, add) {
-    let coins = api.getPlayerDbValue(pId, "coins");
+    let coins = api.getPlayerDbValue(myId, "coins");
 
     coins += add;
 
-    api.setPlayerDbValue(pId, "coins", coins);
-    api.applyEffect(pId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
+    api.setPlayerDbValue(myId, "coins", coins);
+    api.applyEffect(myId, "Coins", null, { displayName: `${coins} Coins`, icon: "Gold Coin" });
 }
