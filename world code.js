@@ -1,4 +1,4 @@
-//update: aaa
+//update: aaaaaaaaaaaaaaaaaaaaaaaaa
 
 /*
 === TODO ===
@@ -14,6 +14,10 @@
 - there seems to be an issue where player coins are not synced
 - brainrots sometimes do not start spawning - maybe due to badly-timed interruptions
 */
+
+// offset code: api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
+
+mobSpawnTime = {};
 
 claimingStart = 1779157161692;
 
@@ -128,7 +132,7 @@ dbListSeparator = "|dbListSeparator|";
 
 lavaPos = [-999, -1002, -941];
 
-brainrotSpawnPos = [-999, -999, -1026];
+brainrotSpawnPos = [-999, -999, -1025];
 brainrotDeathPos = [-999, -997, -942.5];
 
 spawnFreq = 20;
@@ -177,7 +181,7 @@ tickNum3 = 0;
 oldPos = {};
 
 defSize = 2;
-defOffset = [0, 0.85, 0];
+defOffset = [0, -0.85, 0];
 
 rarityColors = {
     "Common": "#fffaf7",
@@ -246,19 +250,22 @@ consec = 0;
 wait = 0;
 
 function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
-    if (!loaded) { "preventDamage"; }
-    
+    if (blockIfUsingPrestigeItem(myId)) { return "preventChange" ;}
+    if (!loaded) { "preventChange"; }
+
     let username = api.getEntityName(myId);
     let isAdmin = admin.includes(username);
     let held = api.getHeldItem(myId)?.name;
     api.setCallbackValueFallback("onPlayerChangeBlock", "preventChange");
     if (fromBlock == "Fireball Block" && !(isAdmin && held?.includes("Pickaxe"))) {
         resetToStarter(myId);
-        return "preventDamage";
+        return "preventChange";
     }
 }
 
 function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
+    if (blockIfUsingPrestigeItem(myId)) { return "preventDamage" ;}
+
     let item = api.getHeldItem(myId);
     if (!canHit(myId)) {
         api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
@@ -276,7 +283,7 @@ function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem,
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     if (!loaded) { "preventDamage"; }
-    
+
     let held = (api.getHeldItem(myId)?.name ?? "");
     if (held.includes("Sword")) { return; }
     api.setCallbackValueFallback("onPlayerDamagingMob", "preventDamage");
@@ -401,7 +408,7 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
 
 function onPlayerSelectInventorySlot(myId, idx) {
     if (!loaded) { return; }
-    
+
     let actionType = getHeldActionType(myId);
 
     if (actionType == "sell") {
@@ -439,32 +446,59 @@ function onPlayerSelectInventorySlot(myId, idx) {
     }
 }
 
+function canUsePrestigeItem(myId, item) {
+    return ((!prestigeItemUsed[myId] || prestigeItemUsed[myId] == item) && !api.hasEffect(myId, `${item}cooldown`));
+}
+
+function blockIfUsingPrestigeItem(myId) {
+    if (prestigeItemUsed[myId]) {
+        api.sendMessage(myId, [{ str: `You're using a prestige item! Please unequip it by holding it and clicking.` }]);
+        return true;
+    }
+    return false;
+}
+
+function attemptBlockUsingPrestigeItem(myId) {
+    if (false) {
+        api.sendMessage(myId, [{ str: `You can't activate this prestige item! Please stop performing that action.` }]);
+        return true;
+    }
+    return false;
+}
+
+let prestigeItemUsed = {};
 function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
     if (!loaded) { return; }
-    
+
     if (getHeldActionType(myId) == "67saddle") {
         if (api.hasEffect(myId, "riding67")) {
-            if (!api.hasEffect(myId, "67saddlecooldown")) {
+            if (canUsePrestigeItem(myId, "67saddle")) {
                 stopRiding67(myId);
                 api.applyEffect(myId, "67saddlecooldown", 15000, { icon: "Spirit Saddle", displayName: "67 Saddle Cooldown" });
+                delete prestigeItemUsed[myId];
             }
         } else {
-            if (!api.hasEffect(myId, "67saddlecooldown")) {
+            if (canUsePrestigeItem(myId, "67saddle")) {
                 ride67(myId, "67");
+                prestigeItemUsed[myId] = "67saddle";
             }
         }
     } else if (getHeldActionType(myId) == "invisibilityhat") {
         if (api.hasEffect(myId, "invisibilityhat")) {
-            if (!api.hasEffect(myId, "invisibilityhatcooldown")) {
+            if (canUsePrestigeItem(myId, "invisibilityhat")) {
                 api.removeEffect(myId, "invisibilityhat");
                 api.applyEffect(myId, "invisibilityhatcooldown", 15000, { icon: "Black Concrete Slab", displayName: "Invisibility Hat Cooldown" });
+                delete prestigeItemUsed[myId];
             }
         } else {
-            if (!api.hasEffect(myId, "invisibilityhatcooldown")) {
+            if (canUsePrestigeItem(myId, "invisibilityhat")) {
                 api.applyEffect(myId, "invisibilityhat", null, { displayName: "Using Invisibility Hat", icon: "Invisible" });
+                prestigeItemUsed[myId] = "invisibilityhat";
             }
         }
     }
+
+    if (blockIfUsingPrestigeItem(myId)) { return ;}
 
     let [lx, ly, lz] = bases[myId].lockPos;
 
@@ -501,21 +535,21 @@ function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
 
 function onPlayerLeave(myId) {
     if (!loaded) { return; }
-    
+
     let idx = baseNum[myId];
-    clearEntireRenderedBase(myId);
+    try { clearEntireRenderedBase(myId); } catch { }
 
-    setBaseLockedState(myId, "unlocked");
+    try { setBaseLockedState(myId, "unlocked"); } catch { }
 
-    if (bases[myId]) { delete bases[myId]; }
-    if (lockTime[myId]) { delete lockTime[myId]; }
-    if (lockedBases[myId]) { delete lockedBases[myId]; }
-    if (stealable[myId]) { delete stealable[myId]; }
+    try { if (bases[myId]) { delete bases[myId]; } } catch { }
+    try { if (lockTime[myId]) { delete lockTime[myId]; } } catch { }
+    try { if (lockedBases[myId]) { delete lockedBases[myId]; } } catch { }
+    try { if (stealable[myId]) { delete stealable[myId]; } } catch { }
 }
 
 function onWorldAttemptDespawnMob(mobId) {
     if (!loaded) { return "preventDespawn"; }
-    
+
     let type = api.getEntityType(mobId);
     //api.log(`Attempted to despawn ${type}`);
     for (let m of mobs) {
@@ -525,7 +559,7 @@ function onWorldAttemptDespawnMob(mobId) {
 
 function onPlayerDropItem(myId, x, y, z, itemName, itemAmount, fromIdx) {
     if (!loaded) { return "preventDrop"; }
-    
+
     let username = api.getEntityName(myId);
     if (!admin.includes(username)) { return "preventDrop"; }
 }
@@ -539,4 +573,4 @@ toload = [
 
 loadedcallbacks = ["tick", "onPlayerJoin"];
 
-const loadwait = 5, loaddelay = 25, showlogs = false; let starttime = null, warmUp = api.getBlock(...toload[0]), loaded = false, startloading = false, ticknum = 0, ticks = 0, shouldLoad = true; function onPlayerJoin(myId) { playerids = api.getPlayerIds(); ticks = toload.length * loadwait + loaddelay; if (!loaded) { starttime = api.now(); let estimatedTime = { ticks: ticks, seconds: 20 * ticks / 1000, ms: 20 * ticks }; try { onDelayStart(estimatedTime); } catch { } if (showlogs) api.log(`Functions not loaded. Loading will finish in ${ticks} ticks! (${20 * ticks}ms or ${20 * ticks / 1000}seconds)`); } else try { onPlayerJoinHidden(myId); if (showlogs) api.log(`Ran onPlayerJoinHidden for ${myId}`); } catch { if (showlogs) api.log(`Failed to run onPlayerJoinHidden for ${myId}`); } } function tick() { if (shouldLoad) { ticknum++; if (ticknum > loaddelay && !startloading) { estimatedTime = { ticks: ticks - loaddelay, seconds: 20 * (ticks - loaddelay) / 1000, ms: 20 * (ticks - loaddelay) }; try { onLoadStart(estimatedTime); } catch { } startloading = true; ticknum = -1; } if (startloading) { exctick = ticknum % loadwait == 0; excnum = Math.floor(ticknum / loadwait); if (excnum < toload.length) { if (exctick) { codepos = toload[excnum]; let block = api.getBlock(...codepos); let codedata = api.getBlockData(...codepos)?.persisted?.shared?.text; globalThis.eval(codedata); if (block == "Unloaded") excnum--; if (showlogs) if (codedata != undefined && block == "Code Block") api.log(`Value from ${block} loaded`); else api.log(`There is no code block with valid block data at ${codepos}`); } } else { let finishedms = api.now() - starttime; estimatedTime = { ticks: finishedms / 20, seconds: finishedms / 1000, ms: finishedms }; try { onLoadEnd(estimatedTime); } catch { } for (let p of api.getPlayerIds()) try { onPlayerJoinHidden(p); } catch { } loaded = true; shouldLoad = false; } } } else try { tickHidden(); } catch { } }
+const loadwait = 5, loaddelay = 25, showlogs = false; let starttime = null, warmUp = api.getBlock(...toload[0]), loaded = false, startloading = false, ticknum = 0, ticks = 0, shouldLoad = true; function onPlayerJoin(myId) { playerids = api.getPlayerIds(); ticks = toload.length * loadwait + loaddelay; if (!loaded) { starttime = api.now(); let estimatedTime = { ticks: ticks, seconds: 20 * ticks / 1000, ms: 20 * ticks }; try { onDelayStart(estimatedTime); } catch { } if (showlogs) api.log(`Functions not loaded. Loading will finish in ${ticks} ticks! (${20 * ticks}ms or ${20 * ticks / 1000}seconds)`); } else try { onPlayerJoinHidden(myId); if (showlogs) api.log(`Ran onPlayerJoinHidden for ${myId}`); } catch { if (showlogs) api.log(`Failed to run onPlayerJoinHidden for ${myId}`); } } function tick() { if (shouldLoad) { ticknum++; if (ticknum > loaddelay && !startloading) { estimatedTime = { ticks: ticks - loaddelay, seconds: 20 * (ticks - loaddelay) / 1000, ms: 20 * (ticks - loaddelay) }; try { onLoadStart(estimatedTime); } catch { } startloading = true; ticknum = -1; } if (startloading) { exctick = ticknum % loadwait == 0; excnum = Math.floor(ticknum / loadwait); if (excnum < toload.length) { if (exctick) { codepos = toload[excnum]; let block = api.getBlock(...codepos); let codedata = api.getBlockData(...codepos)?.persisted?.shared?.text; globalThis.eval(codedata); if (block == "Unloaded") excnum--; if (showlogs) if (codedata != undefined && block == "Code Block") api.log(`Value from ${block} loaded`); else api.log(`There is no code block with valid block data at ${codepos}`); } } else { let finishedms = api.now() - starttime; estimatedTime = { ticks: finishedms / 20, seconds: finishedms / 1000, ms: finishedms }; try { onLoadEnd(estimatedTime); } catch { } for (let p of api.getPlayerIds()) try { onPlayerJoinHidden(p); } catch { } loaded = true; shouldLoad = false; } } } else /*try {*/ tickHidden(); /*} catch(err) { api.log(err) }*/ }
