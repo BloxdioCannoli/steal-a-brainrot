@@ -149,7 +149,6 @@ function tickHidden() {
                     let [spawnx, spawny, spawnz] = brainrotSpawnPos;
                     let mob = api.attemptSpawnMob("NPC", ...[0, 0, spawnz]); //...brainrotSpawnPos
                     hasPlayedParticle[mob] = false;
-                    //api.log(`Spawned mob ${mob}`)
 
                     let brainrotPool = brainrots[rarity.idx].ents;
                     let brainrotData = brainrotPool[random(0, brainrotPool.length - 1)];
@@ -161,12 +160,17 @@ function tickHidden() {
                 }
             }
 
+            //api.log(`${mobs}`);
             for (let mNum = mobs.length - 1; mNum >= 0; mNum--) { // previously: for (let mNum in mobs) {
                 let mob = mobs[mNum];
                 let m = mobs[mNum].id;
 
+                //api.log(`Mob exists (${m})!`);
+
                 const remove = (m, mesh, mNum) => {
                     //api.log(`== Removing mob ==`);
+
+                    delete mobSpawnTime[m];
                     try {
                         api.deleteMeshEntity(mesh);
                         //api.log(`Removed mesh`); 
@@ -191,9 +195,11 @@ function tickHidden() {
                 let mesh = mobs[mNum].mesh;
 
                 let [spawnx, spawny, spawnz] = brainrotSpawnPos;
+                x = spawnx;
 
-                api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
+                //api.log(`${m} exists at ${x, y, newZ}`);
 
+                //api.log(mobs[mNum].invisibleCount);
                 if (mobs[mNum].invisibleCount > 0) {
                     if (hideMobs) {
                         api.applyEffect(m, "Invisible", null, {});
@@ -201,7 +207,10 @@ function tickHidden() {
                     }
                     if (mobs[mNum].invisibleCount <= 1) {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
-                        api.setPosition(m, [spawnx, spawny, spawnz + 1]);
+                        api.setPosition(m, [spawnx, spawny, spawnz]);
+                        api.addFollowingEntityToPlayer(m, mesh, [(mob.offset ?? [0, 0, 0])[0], (mob.offset ?? [0, 0, 0])[1], (mob.offset ?? [0, 0, 0])[2]], false);
+                        mobSpawnTime[m] = api.now();
+                        //api.log(`Set mobSpawnTime[m] to ${mobSpawnTime[m]}`);
                     }
                     mobs[mNum].invisibleCount--;
                 } else {
@@ -211,11 +220,20 @@ function tickHidden() {
                     } else {
 
                     }
-                }
 
-                if (z >= brainrotDeathPos[2]) {
-                    //api.log(`Close to death. Removing.`);
-                    remove(m, mesh, mNum);
+                    //api.log(mobSpawnTime);
+
+                    let timeDifferenceInSeconds = (api.now() - mobSpawnTime[m]) / 1000;
+                    let newZ = timeDifferenceInSeconds * 0.005;
+
+                    //api.log(`newZ = ${newZ}`);
+
+                    api.setPosition(m, [x, y, z+newZ]);
+
+                    if (z+newZ >= brainrotDeathPos[2]) {
+                        //api.log(`Close to death. Removing.`);
+                        remove(m, mesh, mNum);
+                    }
                 }
             }
         }
