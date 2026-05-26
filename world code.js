@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaaaaaaaaaaaaaaa
+//update: aa
 
 /*
 === TODO ===
@@ -246,11 +246,10 @@ players = [];
 hasspawnedmesh = false;
 
 consec = 0;
-
 wait = 0;
 
 function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
-    if (blockIfUsingPrestigeItem(myId)) { return "preventChange" ;}
+    if (blockIfUsingPrestigeItem(myId)) { return "preventChange"; }
     if (!loaded) { "preventChange"; }
 
     let username = api.getEntityName(myId);
@@ -264,7 +263,7 @@ function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fro
 }
 
 function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
-    if (blockIfUsingPrestigeItem(myId)) { return "preventDamage" ;}
+    if (blockIfUsingPrestigeItem(myId)) { return "preventDamage"; }
 
     let item = api.getHeldItem(myId);
     if (!canHit(myId)) {
@@ -282,7 +281,7 @@ function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem,
 }
 
 function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
-    if (!loaded) { "preventDamage"; }
+    if ((!loaded) || blockIfUsingPrestigeItem(myId)) { "preventDamage"; }
 
     let held = (api.getHeldItem(myId)?.name ?? "");
     if (held.includes("Sword")) { return; }
@@ -466,8 +465,10 @@ function attemptBlockUsingPrestigeItem(myId) {
     return false;
 }
 
+let prestigeItemActivatedThisTick = {};
 let prestigeItemUsed = {};
 function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
+    prestigeItemActivatedThisTick[myId] = null;
     if (!loaded) { return; }
 
     if (getHeldActionType(myId) == "67saddle") {
@@ -481,6 +482,7 @@ function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
             if (canUsePrestigeItem(myId, "67saddle")) {
                 ride67(myId, "67");
                 prestigeItemUsed[myId] = "67saddle";
+                prestigeItemActivatedThisTick[myId] = true;
             }
         }
     } else if (getHeldActionType(myId) == "invisibilityhat") {
@@ -488,17 +490,20 @@ function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
             if (canUsePrestigeItem(myId, "invisibilityhat")) {
                 api.removeEffect(myId, "invisibilityhat");
                 api.applyEffect(myId, "invisibilityhatcooldown", 15000, { icon: "Black Concrete Slab", displayName: "Invisibility Hat Cooldown" });
+                api.setPlayerOpacity(myId, 1);
                 delete prestigeItemUsed[myId];
             }
         } else {
             if (canUsePrestigeItem(myId, "invisibilityhat")) {
                 api.applyEffect(myId, "invisibilityhat", null, { displayName: "Using Invisibility Hat", icon: "Invisible" });
+                api.setPlayerOpacity(myId, 0);
                 prestigeItemUsed[myId] = "invisibilityhat";
+                prestigeItemActivatedThisTick[myId] = true;
             }
         }
     }
 
-    if (blockIfUsingPrestigeItem(myId)) { return ;}
+    if (!prestigeItemActivatedThisTick[myId]) { if (blockIfUsingPrestigeItem(myId)) { return; } }
 
     let [lx, ly, lz] = bases[myId].lockPos;
 
@@ -573,4 +578,151 @@ toload = [
 
 loadedcallbacks = ["tick", "onPlayerJoin"];
 
-const loadwait = 5, loaddelay = 25, showlogs = false; let starttime = null, warmUp = api.getBlock(...toload[0]), loaded = false, startloading = false, ticknum = 0, ticks = 0, shouldLoad = true; function onPlayerJoin(myId) { playerids = api.getPlayerIds(); ticks = toload.length * loadwait + loaddelay; if (!loaded) { starttime = api.now(); let estimatedTime = { ticks: ticks, seconds: 20 * ticks / 1000, ms: 20 * ticks }; try { onDelayStart(estimatedTime); } catch { } if (showlogs) api.log(`Functions not loaded. Loading will finish in ${ticks} ticks! (${20 * ticks}ms or ${20 * ticks / 1000}seconds)`); } else try { onPlayerJoinHidden(myId); if (showlogs) api.log(`Ran onPlayerJoinHidden for ${myId}`); } catch { if (showlogs) api.log(`Failed to run onPlayerJoinHidden for ${myId}`); } } function tick() { if (shouldLoad) { ticknum++; if (ticknum > loaddelay && !startloading) { estimatedTime = { ticks: ticks - loaddelay, seconds: 20 * (ticks - loaddelay) / 1000, ms: 20 * (ticks - loaddelay) }; try { onLoadStart(estimatedTime); } catch { } startloading = true; ticknum = -1; } if (startloading) { exctick = ticknum % loadwait == 0; excnum = Math.floor(ticknum / loadwait); if (excnum < toload.length) { if (exctick) { codepos = toload[excnum]; let block = api.getBlock(...codepos); let codedata = api.getBlockData(...codepos)?.persisted?.shared?.text; globalThis.eval(codedata); if (block == "Unloaded") excnum--; if (showlogs) if (codedata != undefined && block == "Code Block") api.log(`Value from ${block} loaded`); else api.log(`There is no code block with valid block data at ${codepos}`); } } else { let finishedms = api.now() - starttime; estimatedTime = { ticks: finishedms / 20, seconds: finishedms / 1000, ms: finishedms }; try { onLoadEnd(estimatedTime); } catch { } for (let p of api.getPlayerIds()) try { onPlayerJoinHidden(p); } catch { } loaded = true; shouldLoad = false; } } } else /*try {*/ tickHidden(); /*} catch(err) { api.log(err) }*/ }
+const loadwait = 12;
+const loaddelay = 25;
+const showlogs = false;
+
+let starttime = null;
+let warmUp = api.getBlock(...toload[0]);
+
+let loaded = false;
+let startloading = false;
+let shouldLoad = true;
+
+let ticknum = 0;
+let ticks = 0;
+
+function onPlayerJoin(myId) {
+    let username = api.getEntityName(myId);
+
+    if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
+
+    playerids = api.getPlayerIds();
+
+    ticks = (toload.length * loadwait) + loaddelay;
+
+    if (!loaded) {
+        starttime = api.now();
+
+        let estimatedTime = {
+            ticks: ticks,
+            seconds: (20 * ticks) / 1000,
+            ms: 20 * ticks
+        };
+
+        try {
+            onDelayStart(estimatedTime);
+        } catch { }
+
+        if (showlogs) {
+            api.log(
+                `Functions not loaded. Loading will finish in ${ticks} ticks! ` +
+                `(${20 * ticks}ms or ${(20 * ticks) / 1000}seconds)`
+            );
+        }
+    } else {
+        try {
+            onPlayerJoinHidden(myId);
+
+            if (showlogs) {
+                api.log(`Ran onPlayerJoinHidden for ${myId}`);
+            }
+        } catch {
+            if (showlogs) {
+                api.log(`Failed to run onPlayerJoinHidden for ${myId}`);
+            }
+        }
+    }
+}
+
+function tick() {
+    if (shouldLoad) {
+        ticknum++;
+
+        if (ticknum > loaddelay && !startloading) {
+            let estimatedTime = {
+                ticks: ticks - loaddelay,
+                seconds: (20 * (ticks - loaddelay)) / 1000,
+                ms: 20 * (ticks - loaddelay)
+            };
+
+            try {
+                onLoadStart(estimatedTime);
+            } catch { }
+
+            startloading = true;
+            ticknum = -1;
+        }
+
+        if (startloading) {
+            let exctick = (ticknum % loadwait) == 0;
+            let excnum = Math.floor(ticknum / loadwait);
+
+            if (excnum < toload.length) {
+                if (exctick) {
+                    if (excnum > 0) { excnum--; }
+                    if (api.isNearInterrupt()) { return; }
+                    let codepos = toload[excnum];
+
+                    let block = api.getBlock(...codepos);
+
+                    let codedata =
+                        api.getBlockData(...codepos)
+                            ?.persisted
+                            ?.shared
+                            ?.text;
+
+                    if (codedata) {
+                        globalThis.eval(codedata);
+                    }
+
+                    if (block == "Unloaded") {
+
+                    }
+
+                    if (showlogs) {
+                        if (
+                            codedata != undefined &&
+                            block == "Code Block"
+                        ) {
+                            api.log(`Value from ${block} loaded`);
+                            excnum++;
+                        } else {
+                            api.log(
+                                `There is no code block with valid block data at ${codepos}`
+                            );
+                            excnum++;
+                        }
+                    }
+                }
+            } else {
+                let finishedms = api.now() - starttime;
+
+                let estimatedTime = {
+                    ticks: finishedms / 20,
+                    seconds: finishedms / 1000,
+                    ms: finishedms
+                };
+
+                try {
+                    onLoadEnd(estimatedTime);
+                } catch { }
+
+                for (let p of api.getPlayerIds()) {
+                    try {
+                        onPlayerJoinHidden(p);
+                    } catch { }
+                }
+
+                loaded = true;
+                shouldLoad = false;
+            }
+        }
+    } else {
+        /*try {*/
+        tickHidden();
+        /*} catch(err) {
+            api.log(err);
+        }*/
+    }
+}
