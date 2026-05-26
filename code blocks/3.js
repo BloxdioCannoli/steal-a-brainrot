@@ -23,13 +23,10 @@ function tickHidden() {
             let cost = mob.brainrotData.data.cost;
 
             let hasAdded = addBrainrot(myId, { id: [rarityId, mob.brainrotData.cid], rarityName: mob.rarityName, level: 1, lastClaimedAt: minifyTime(api.now()) });
-            //api.log(`rarityConfigId: ${rarityId}, brainrotConfigId: ${mob.brainrotData.cid}`);
             if (hasAdded) {
                 let pos = api.getPosition(mobId);
                 let [x, y, z] = pos;
 
-                //api.log(`Let's try to despawn ${mobId}`);
-                //api.setPosition(mobId, [x, y+5, z]);
                 api.despawnMob(mobId);
 
                 removeCoins(myId, cost);
@@ -53,7 +50,6 @@ function tickHidden() {
                 let count = h.count;
                 let [x, y, z] = h.pos;
 
-                //api.log(`toHide element at ${[x, y, z]} found`)
 
                 if (count <= 8) {
                     try {
@@ -63,12 +59,12 @@ function tickHidden() {
                         api.scalePlayerMeshNodes(m, { TorsoNode: [2, 2, 2], ArmLeftMesh: [1, 1, 1], ArmRightMesh: [1, 1, 1], HeadMesh: [1, 1, 1], LegLeftMesh: [1, 1, 1], LegRightMesh: [1, 1, 1] });
                         api.setPosition(m, [x, y, z]);
                         let effects = api.getEffects(m);
-                        //api.log(effects)
+
                         if (effects.includes("Invisible") && count <= 1) {
                             api.setPosition(mob, x + 0, y + 0, z + 0);
                             toHide.splice(h, 1); continue;
                         }
-                        //api.log(`toHide element at ${[x, y, z]} found`)
+
                     } catch {
                         toHide.splice(hNum, 1);
                     }
@@ -152,35 +148,33 @@ function tickHidden() {
                 }
             }
 
-            //api.log(`${mobs}`);
-            for (let mNum = mobs.length - 1; mNum >= 0; mNum--) { // previously: for (let mNum in mobs) {
+            try {
+                if (!globalThis.savedMobNum) { globalThis.savedMobNum = 0; }
+            } catch { globalThis.savedMobNum = mobs.length - 1; }
+            for (let mNum = (globalThis.savedMobNum ?? mobs.length - 1); mNum >= 0; mNum--) { // previously: for (let mNum in mobs) {
+                globalThis.savedMobNum = mNum;
+                if (api.isNearInterrupt()) { return; }
+
                 let mob = mobs[mNum];
                 let m = mobs[mNum].id;
 
-                //api.log(`Mob exists (${m})!`);
 
                 const remove = (m, mesh, mNum) => {
-                    //api.log(`== Removing mob ==`);
 
                     delete mobSpawnTime[m];
                     try {
                         api.deleteMeshEntity(mesh);
-                        //api.log(`Removed mesh`); 
-                    } catch (err) {
-                        // api.log(`Failed to remove mesh (${mesh})\n\nError: ${JSON.stringify(err)}`); 
+                    } catch (err) { 
                     }
                     try {
                         api.despawnMob(m);
-                        //api.log(`Despawned mob`); 
                     } catch (err) {
-                        //api.log(`Failed to despawn mob (${m})\n\nError: ${JSON.stringify(err)}`); 
                     }
                     mobs.splice(mNum, 1);
                 };
 
                 let [x, y, z] = [null, null, null];
                 try { [x, y, z] = api.getPosition(m); } catch (err) {
-                    //api.log(`Failed to get position of ${m}. Removing.\n\nError: ${JSON.stringify(err)}`);
                     remove(m, mobs[mNum]?.mesh, mNum); continue;
                 }
 
@@ -189,9 +183,6 @@ function tickHidden() {
                 let [spawnx, spawny, spawnz] = brainrotSpawnPos;
                 x = spawnx;
 
-                //api.log(`${m} exists at ${x, y, newZ}`);
-
-                //api.log(mobs[mNum].invisibleCount);
                 if (mobs[mNum].invisibleCount > 0) {
                     if (hideMobs) {
                         api.applyEffect(m, "Invisible", null, {});
@@ -202,7 +193,6 @@ function tickHidden() {
                         api.setPosition(m, [spawnx, spawny, spawnz]);
                         api.addFollowingEntityToPlayer(m, mesh, [(mob.offset ?? [0, 0, 0])[0], (mob.offset ?? [0, 0, 0])[1], (mob.offset ?? [0, 0, 0])[2]], false);
                         mobSpawnTime[m] = api.now();
-                        //api.log(`Set mobSpawnTime[m] to ${mobSpawnTime[m]}`);
                     }
                     mobs[mNum].invisibleCount--;
                 } else {
@@ -213,21 +203,17 @@ function tickHidden() {
 
                     }
 
-                    //api.log(mobSpawnTime);
-
                     let timeDifferenceInSeconds = (api.now() - mobSpawnTime[m]) / 1000;
                     let newZ = timeDifferenceInSeconds * 0.005;
 
-                    //api.log(`newZ = ${newZ}`);
+                    api.setPosition(m, [x, y, z + newZ]);
 
-                    api.setPosition(m, [x, y, z+newZ]);
-
-                    if (z+newZ >= brainrotDeathPos[2]) {
-                        //api.log(`Close to death. Removing.`);
+                    if (z + newZ >= brainrotDeathPos[2]) {
                         remove(m, mesh, mNum);
                     }
                 }
             }
+            globalThis.savedMobNum = mobs.length - 1;
         }
     } else {
         // player tick
@@ -235,6 +221,12 @@ function tickHidden() {
 
         if (!playerJoinLevel[pId]) {
             beginRunPlayerJoin(pId);
+        }
+
+        let base = bases[pId];
+
+        if (globalThis.shouldUpdatePlayerBrainrots[pId] && base) {
+            updateBrainrotsVisual(pId, base.brainrotPlatforms);
         }
 
         let exists = true;
@@ -303,12 +295,15 @@ function tickHidden() {
         }
 
         let pos = api.getPosition(pId);
-        if (pos != oldPos) {
-            let inside = isInOwnBase(pId);
-            if (inside) {
-                attemptSteal(pId);
-            }
 
+        if (pos != oldPos) {
+            if (base) {
+                let inside = isInOwnBase(pId);
+                if (inside) {
+                    attemptSteal(pId);
+                }
+
+            }
         }
 
         oldCoins[pId] = coins;
