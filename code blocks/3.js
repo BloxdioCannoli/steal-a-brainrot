@@ -1,11 +1,3 @@
-function onPlayerJoinHidden(myId) {
-    let username = api.getEntityName(myId);
-
-    if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
-
-    beginRunPlayerJoin(myId);
-}
-
 function tickHidden() {
     //return;
     tickNum2 = (tickNum2 + 1) % 5; if (tickNum2 != 0) { return; }
