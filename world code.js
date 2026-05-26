@@ -1,4 +1,4 @@
-//update: aa
+//update: aaaaaaaa
 
 /*
 === TODO ===
@@ -17,236 +17,268 @@
 
 // offset code: api.setPosition(mesh, [x - (mob.offset ?? [0, 0, 0])[0], y - (mob.offset ?? [0, 0, 0])[1], z - (mob.offset ?? [0, 0, 0])[2]]);
 
-mobSpawnTime = {};
+defineVariables();
 
-claimingStart = 1779157161692;
+function defineVariables() {
+    if (globalThis.hasDefinedVariables) { return; }
+    mobSpawnTime = {};
 
-spawnPos = [-999, -996, -999];
+    globalThis.shouldUpdatePlayerBrainrots = {};
 
-hasPlayedParticle = {};
+    claimingStart = 1779157161692;
 
-purchaseMob = [];
+    spawnPos = [-999, -996, -999];
 
-stealing = {};
-beingStolenFrom = {};
+    hasPlayedParticle = {};
 
-serverUiText = "#cef3ff";
-oldPlayers = [];
+    purchaseMob = [];
 
-disableAdminMode = false;
+    stealing = {};
+    beingStolenFrom = {};
 
-playerBrainrotIds = {};
+    serverUiText = "#cef3ff";
+    oldPlayers = [];
 
-hasSetMax = false;
-playerJoinLevel = {};
+    disableAdminMode = false;
 
-enableLighting = true;
+    playerBrainrotIds = {};
 
-admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt", "SubTo_javisthejavisYT"];
+    hasSetMax = false;
+    playerJoinLevel = {};
 
-customText = {
-    rebirth: [-1010, -997, -1027],
-    luck: [-979, -992, -1045],
-    merge: [-993, -996, -992],
-    debugReset: [-1005, -997, -972],
-};
+    enableLighting = true;
 
-shouldRunPlayerJoin = {};
+    admin = ["WanderingCannoli", "WanderingCanoli", "Javisthejavisyt", "SubTo_javisthejavisYT"];
 
-hideMobs = true;
-oldCoins = {};
+    customText = {
+        rebirth: [-1010, -997, -1027],
+        luck: [-979, -992, -1045],
+        merge: [-993, -996, -992],
+        debugReset: [-1005, -997, -972],
+    };
 
-updateSidebar = {};
-toHide = [];
-stealable = {};
+    shouldRunPlayerJoin = {};
 
-basesConfig = [
-    {
-        nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -999, -957], otherLasers: [[-1027, -990, -952], [-1028, -990, -952]], lockPos: [-1019, -996, -960],
+    hideMobs = true;
+    oldCoins = {};
 
-        brainrotPlatforms: [[-1020, -998, -960], [-1023, -998, -960], [-1026, -998, -960],
-        [-1020, -998, -954], [-1023, -998, -954], [-1026, -998, -954],
-        [-1020, -989, -960], [-1023, -989, -960], [-1026, -989, -960],
-        [-1020, -989, -954], [-1023, -989, -954], [-1026, -989, -954]]
-    },
-    {
-        nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]], laserStartPos: [-1018, -999, -976], otherLasers: [[-1027, -990, -971], [-1028, -990, -971]], lockPos: [-1019, -996, -979],
+    updateSidebar = {};
+    toHide = [];
+    stealable = {};
 
-        brainrotPlatforms: [[-1020, -998, -979], [-1023, -998, -979], [-1026, -998, -979],
-        [-1020, -998, -973], [-1023, -998, -973], [-1026, -998, -973],
-        [-1020, -989, -979], [-1023, -989, -979], [-1026, -989, -979],
-        [-1020, -989, -973], [-1023, -989, -973], [-1026, -989, -973]]
-    },
-    {
-        nametagPos: [-1018, -994, -994], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]], laserStartPos: [-1018, -999, -994], otherLasers: [[-1027, -990, -989], [-1028, -990, -989]], lockPos: [-1019, -996, -997],
+    basesConfig = [
+        {
+            nametagPos: [-1018, -994, -957], spawnPos: [-1021, -998, -957], borders: [[-1018, -999, -950], [-1029, -982, -963]], laserStartPos: [-1018, -999, -957], otherLasers: [[-1027, -990, -952], [-1028, -990, -952]], lockPos: [-1019, -996, -960],
 
-        brainrotPlatforms: [[-1020, -998, -997], [-1023, -998, -997], [-1026, -998, -997],
-        [-1020, -998, -991], [-1023, -998, -991], [-1026, -998, -991],
-        [-1020, -989, -997], [-1023, -989, -997], [-1026, -989, -997],
-        [-1020, -989, -991], [-1023, -989, -991], [-1026, -989, -991]]
-    },
-    {
-        nametagPos: [-1018, -994, -1013], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]], laserStartPos: [-1018, -999, -1013], otherLasers: [[-1027, -990, -1008], [-1028, -990, -1008]], lockPos: [-1019, -996, -1016],
+            brainrotPlatforms: [[-1020, -998, -960], [-1023, -998, -960], [-1026, -998, -960],
+            [-1020, -998, -954], [-1023, -998, -954], [-1026, -998, -954],
+            [-1020, -989, -960], [-1023, -989, -960], [-1026, -989, -960],
+            [-1020, -989, -954], [-1023, -989, -954], [-1026, -989, -954]]
+        },
+        {
+            nametagPos: [-1018, -994, -976], spawnPos: [-1020, -998, -976], borders: [[-1018, -999, -969], [-1029, -982, -982]], laserStartPos: [-1018, -999, -976], otherLasers: [[-1027, -990, -971], [-1028, -990, -971]], lockPos: [-1019, -996, -979],
 
-        brainrotPlatforms: [[-1020, -998, -1016], [-1023, -998, -1016], [-1026, -998, -1016],
-        [-1020, -998, -1010], [-1023, -998, -1010], [-1026, -998, -1010],
-        [-1020, -989, -1016], [-1023, -989, -1016], [-1026, -989, -1016],
-        [-1020, -989, -1010], [-1023, -989, -1010], [-1026, -989, -1010]]
-    },
+            brainrotPlatforms: [[-1020, -998, -979], [-1023, -998, -979], [-1026, -998, -979],
+            [-1020, -998, -973], [-1023, -998, -973], [-1026, -998, -973],
+            [-1020, -989, -979], [-1023, -989, -979], [-1026, -989, -979],
+            [-1020, -989, -973], [-1023, -989, -973], [-1026, -989, -973]]
+        },
+        {
+            nametagPos: [-1018, -994, -994], spawnPos: [-1020, -998, -995], borders: [[-1018, -999, -988], [-1029, -982, -1001]], laserStartPos: [-1018, -999, -994], otherLasers: [[-1027, -990, -989], [-1028, -990, -989]], lockPos: [-1019, -996, -997],
 
-    {
-        nametagPos: [-984, -994, -957], spawnPos: [-984, -998, -957], borders: [[-984, -982, -952], [-973, -999, -940]], laserStartPos: [-984, -999, -957], otherLasers: [[-975, -990, -1019], [-974, -990, -1019]], lockPos: [-983, -996, -960],
+            brainrotPlatforms: [[-1020, -998, -997], [-1023, -998, -997], [-1026, -998, -997],
+            [-1020, -998, -991], [-1023, -998, -991], [-1026, -998, -991],
+            [-1020, -989, -997], [-1023, -989, -997], [-1026, -989, -997],
+            [-1020, -989, -991], [-1023, -989, -991], [-1026, -989, -991]]
+        },
+        {
+            nametagPos: [-1018, -994, -1013], spawnPos: [-1020, -998, -1014], borders: [[-1018, -999, -1007], [-1029, -982, -1020]], laserStartPos: [-1018, -999, -1013], otherLasers: [[-1027, -990, -1008], [-1028, -990, -1008]], lockPos: [-1019, -996, -1016],
 
-        brainrotPlatforms: [[-986, -998, -960], [-989, -998, -960], [-992, -998, -960],
-        [-986, -998, -954], [-989, -998, -954], [-992, -998, -954],
-        [-986, -989, -960], [-989, -989, -960], [-992, -989, -960],
-        [-986, -989, -954], [-989, -989, -954], [-992, -989, -954]]
-    },
-    {
-        nametagPos: [-984, -994, -976], spawnPos: [-984, -998, -976], borders: [[-984, -982, -965], [-973, -999, -953]], laserStartPos: [-984, -999, -976], otherLasers: [[-975, -990, -1000], [-974, -990, -1000]], lockPos: [-983, -996, -979],
+            brainrotPlatforms: [[-1020, -998, -1016], [-1023, -998, -1016], [-1026, -998, -1016],
+            [-1020, -998, -1010], [-1023, -998, -1010], [-1026, -998, -1010],
+            [-1020, -989, -1016], [-1023, -989, -1016], [-1026, -989, -1016],
+            [-1020, -989, -1010], [-1023, -989, -1010], [-1026, -989, -1010]]
+        },
 
-        brainrotPlatforms: [[-986, -998, -979], [-989, -998, -979], [-992, -998, -979],
-        [-986, -998, -973], [-989, -998, -973], [-992, -998, -973],
-        [-986, -989, -979], [-989, -989, -979], [-992, -989, -979],
-        [-986, -989, -973], [-989, -989, -973], [-992, -989, -973]]
-    },
-    {
-        nametagPos: [-984, -994, -994], spawnPos: [-984, -998, -995], borders: [[-984, -982, -978], [-973, -999, -966]], laserStartPos: [-984, -999, -994], otherLasers: [[-975, -990, -982], [-974, -990, -982]], lockPos: [-983, -996, -997],
+        {
+            nametagPos: [-984, -994, -957], spawnPos: [-984, -998, -957], borders: [[-984, -982, -952], [-973, -999, -940]], laserStartPos: [-984, -999, -957], otherLasers: [[-975, -990, -1019], [-974, -990, -1019]], lockPos: [-983, -996, -960],
 
-        brainrotPlatforms: [[-986, -998, -997], [-989, -998, -997], [-992, -998, -997],
-        [-986, -998, -991], [-989, -998, -991], [-992, -998, -991],
-        [-986, -989, -997], [-989, -989, -997], [-992, -989, -997],
-        [-986, -989, -991], [-989, -989, -991], [-992, -989, -991]]
-    },
-    {
-        nametagPos: [-984, -994, -1013], spawnPos: [-984, -998, -1014], borders: [[-984, -982, -991], [-973, -999, -979]], laserStartPos: [-984, -999, -1013], otherLasers: [[-975, -990, -963], [-974, -990, -963]], lockPos: [-983, -996, -1016],
+            brainrotPlatforms: [[-986, -998, -960], [-989, -998, -960], [-992, -998, -960],
+            [-986, -998, -954], [-989, -998, -954], [-992, -998, -954],
+            [-986, -989, -960], [-989, -989, -960], [-992, -989, -960],
+            [-986, -989, -954], [-989, -989, -954], [-992, -989, -954]]
+        },
+        {
+            nametagPos: [-984, -994, -976], spawnPos: [-984, -998, -976], borders: [[-984, -982, -965], [-973, -999, -953]], laserStartPos: [-984, -999, -976], otherLasers: [[-975, -990, -1000], [-974, -990, -1000]], lockPos: [-983, -996, -979],
 
-        brainrotPlatforms: [[-986, -998, -1016], [-989, -998, -1016], [-992, -998, -1016],
-        [-986, -998, -1010], [-989, -998, -1010], [-992, -998, -1010],
-        [-986, -989, -1016], [-989, -989, -1016], [-992, -989, -1016],
-        [-986, -989, -1010], [-989, -989, -1010], [-992, -989, -1010]]
-    },
-];
+            brainrotPlatforms: [[-986, -998, -979], [-989, -998, -979], [-992, -998, -979],
+            [-986, -998, -973], [-989, -998, -973], [-992, -998, -973],
+            [-986, -989, -979], [-989, -989, -979], [-992, -989, -979],
+            [-986, -989, -973], [-989, -989, -973], [-992, -989, -973]]
+        },
+        {
+            nametagPos: [-984, -994, -994], spawnPos: [-984, -998, -995], borders: [[-984, -982, -978], [-973, -999, -966]], laserStartPos: [-984, -999, -994], otherLasers: [[-975, -990, -982], [-974, -990, -982]], lockPos: [-983, -996, -997],
 
-dbListSeparator = "|dbListSeparator|";
+            brainrotPlatforms: [[-986, -998, -997], [-989, -998, -997], [-992, -998, -997],
+            [-986, -998, -991], [-989, -998, -991], [-992, -998, -991],
+            [-986, -989, -997], [-989, -989, -997], [-992, -989, -997],
+            [-986, -989, -991], [-989, -989, -991], [-992, -989, -991]]
+        },
+        {
+            nametagPos: [-984, -994, -1013], spawnPos: [-984, -998, -1014], borders: [[-984, -982, -991], [-973, -999, -979]], laserStartPos: [-984, -999, -1013], otherLasers: [[-975, -990, -963], [-974, -990, -963]], lockPos: [-983, -996, -1016],
 
-lavaPos = [-999, -1002, -941];
+            brainrotPlatforms: [[-986, -998, -1016], [-989, -998, -1016], [-992, -998, -1016],
+            [-986, -998, -1010], [-989, -998, -1010], [-992, -998, -1010],
+            [-986, -989, -1016], [-989, -989, -1016], [-992, -989, -1016],
+            [-986, -989, -1010], [-989, -989, -1010], [-992, -989, -1010]]
+        },
+    ];
 
-brainrotSpawnPos = [-999, -999, -1025];
-brainrotDeathPos = [-999, -997, -942.5];
+    dbListSeparator = "|dbListSeparator|";
 
-spawnFreq = 20;
-maxConsec = 1;
-waitNum = 5;
+    lavaPos = [-999, -1002, -941];
 
-maxBrainrots = 12; // real max: 12
+    brainrotSpawnPos = [-999, -999, -1025];
+    brainrotDeathPos = [-999, -997, -942.5];
 
-defOwnedBaseNametag = {
-    title: {
-        style: { color: "#d6362b", fontSize: "80px" },
-        backgroundColor: "#fa5b50",
-    },
-    subtitle: {
-        style: { color: "#d62bc5", fontSize: "50px" },
-        backgroundColor: "#e080d7",
-    },
-};
+    spawnFreq = 20;
+    maxConsec = 1;
+    waitNum = 5;
 
-defBaseNametag = {
-    title: {
-        style: { color: "#d6362b", fontSize: "50px" },
-        backgroundColor: "#fa5b50",
-    },
-    subtitle: {
-        style: { color: "#d62bc5", fontSize: "50px" },
-        backgroundColor: "#e080d7",
-    },
-};
+    maxBrainrots = 12; // real max: 12
 
-defLockTime = 30;
+    defOwnedBaseNametag = {
+        title: {
+            style: { color: "#d6362b", fontSize: "80px" },
+            backgroundColor: "#fa5b50",
+        },
+        subtitle: {
+            style: { color: "#d62bc5", fontSize: "50px" },
+            backgroundColor: "#e080d7",
+        },
+    };
 
-nextSpawnAt = api.now();
+    defBaseNametag = {
+        title: {
+            style: { color: "#d6362b", fontSize: "50px" },
+            backgroundColor: "#fa5b50",
+        },
+        subtitle: {
+            style: { color: "#d62bc5", fontSize: "50px" },
+            backgroundColor: "#e080d7",
+        },
+    };
 
-lockedBases = {};
-lockTime = {};
+    defLockTime = 30;
 
-bases = {};
-baseNum = {};
+    nextSpawnAt = api.now();
 
-tickNum = 0;
+    lockedBases = {};
+    lockTime = {};
 
-tickNum2 = 0;
-tickNum3 = 0;
+    bases = {};
+    baseNum = {};
 
-oldPos = {};
+    tickNum = 0;
 
-defSize = 2;
-defOffset = [0, -0.85, 0];
+    tickNum2 = 0;
+    tickNum3 = 0;
 
-rarityColors = {
-    "Common": "#fffaf7",
-    "Uncommon": "#41fc03",
-    "Rare": "#0390fc",
-    "Legendary": "#e8d631",
-    "Mythical": "#5531e8",
-};
+    oldPos = {};
 
-brainrots = [
-    // cid = config id
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 0 },
-            { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 1 },
-            { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 2 },
-            { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 3 },
-        ], name: "Common", chance: 1, cid: 0,
-    },
+    defSize = 2;
+    defOffset = [0, -0.85, 0];
 
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 5000 }, cid: 0 },
-            { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 5000 }, cid: 1 },
-            { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 5000 }, cid: 2 },
-        ], name: "Uncommon", chance: 0.5, cid: 1,
-    },
+    rarityColors = {
+        "Common": "#fffaf7",
+        "Uncommon": "#41fc03",
+        "Rare": "#0390fc",
+        "Legendary": "#e8d631",
+        "Mythical": "#5531e8",
+    };
 
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 5000, cost: 10000 }, cid: 0 },
-            { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 5000, cost: 10000 }, cid: 1 },
-            { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 5000, cost: 10000 }, cid: 2 },
-            { meshType: "BloxdBlock", blockName: "Block of Diamond", displayName: "Diamond Bloxd", size: defSize, offset: [0, 0, 0], data: { cps: 5000, cost: 10000 }, cid: 3 },
-        ], name: "Rare", chance: 0.25, cid: 2,
-    },
+    brainrots = [
+        // cid = config id
+        {
+            ents: [
+                { meshType: "BloxdBlock", blockName: "67 Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 0 },
+                { meshType: "BloxdBlock", blockName: "Bobzilla Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 1 },
+                { meshType: "BloxdBlock", blockName: "Brra Brra Pachim Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 2 },
+                { meshType: "BloxdBlock", blockName: "Monsieur Bedwar Statue", size: defSize, offset: defOffset, data: { cps: 50, cost: 1000 }, cid: 3 },
+            ], name: "Common", chance: 1, cid: 0,
+        },
 
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 0 },
-            { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino Statue", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 1 },
-        ], name: "Legendary", chance: 0.1, cid: 3,
-    },
+        {
+            ents: [
+                { meshType: "BloxdBlock", blockName: "Duo Blocchino Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 5000 }, cid: 0 },
+                { meshType: "BloxdBlock", blockName: "Capitano Explovissimo Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 5000 }, cid: 1 },
+                { meshType: "BloxdBlock", blockName: "Il Wizardini Del Porko Statue", size: defSize, offset: defOffset, data: { cps: 100, cost: 5000 }, cid: 2 },
+            ], name: "Uncommon", chance: 0.5, cid: 1,
+        },
 
-    {
-        ents: [
-            { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 10000, cost: 10000000 }, cid: 0 },
-        ], name: "Mythical", chance: 0.05, cid: 4,
-    },
-];
+        {
+            ents: [
+                { meshType: "BloxdBlock", blockName: "Bebek Bebek Bebek Statue", size: defSize, offset: defOffset, data: { cps: 5000, cost: 10000 }, cid: 0 },
+                { meshType: "BloxdBlock", blockName: "Chimpanzano Bananano Statue", size: defSize, offset: defOffset, data: { cps: 5000, cost: 10000 }, cid: 1 },
+                { meshType: "BloxdBlock", blockName: "Twirlina Cappucina Statue", size: defSize, offset: defOffset, data: { cps: 5000, cost: 10000 }, cid: 2 },
+                { meshType: "BloxdBlock", blockName: "Block of Diamond", displayName: "Diamond Bloxd", size: defSize, offset: [0, 0, 0], data: { cps: 5000, cost: 10000 }, cid: 3 },
+            ], name: "Rare", chance: 0.25, cid: 2,
+        },
 
-tickNum = 0;
+        {
+            ents: [
+                { meshType: "BloxdBlock", blockName: "Bobino Musculino Statue", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 0 },
+                { meshType: "BloxdBlock", blockName: "Cappuccino Ninjino Statue", size: defSize, offset: defOffset, data: { cps: 1000, cost: 100000 }, cid: 1 },
+            ], name: "Legendary", chance: 0.1, cid: 3,
+        },
 
-pId = 0;
-pNum = 0;
+        {
+            ents: [
+                { meshType: "BloxdBlock", blockName: "Lucchia Blocchi Statue", size: defSize, offset: defOffset, data: { cps: 10000, cost: 10000000 }, cid: 0 },
+            ], name: "Mythical", chance: 0.05, cid: 4,
+        },
+    ];
 
-startWorldTickAt = 0;//20;
+    tickNum = 0;
 
-mobs = [];
-players = [];
+    pId = 0;
+    pNum = 0;
 
-hasspawnedmesh = false;
+    startWorldTickAt = 0;//20;
 
-consec = 0;
-wait = 0;
+    mobs = [];
+    players = [];
+
+    hasspawnedmesh = false;
+
+    consec = 0;
+    wait = 0;
+
+    toload = [
+        [1000, 1000, 1000],
+        [1000, 1000, 999],
+        [1000, 1000, 998],
+        [1000, 1000, 997],
+    ];
+
+    loadedcallbacks = ["tick", "onPlayerJoin"];
+
+    loadwait = 12;
+    loaddelay = 25;
+    showlogs = false;
+
+    starttime = null;
+    warmUp = api.getBlock(...toload[0]);
+
+    loaded = false;
+    startloading = false;
+    shouldLoad = true;
+
+    ticknum = 0;
+    ticks = 0;
+
+    globalThis.hasDefinedVariables = true;
+}
 
 function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fromBlockInfo, toBlockInfo) {
     if (blockIfUsingPrestigeItem(myId)) { return "preventChange"; }
@@ -335,7 +367,6 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
                 removeBrainrot(stealingFrom, dbIdx);
                 showBrainrotStealingEffect(myId, configValue.blockName);
 
-                api.log(s.brainrot);
                 let stealingBrainrotConfig = getBrainrotById(s.brainrot.id);
 
                 refreshBrainrotRender(stealingFrom);
@@ -377,12 +408,9 @@ function onPlayerDamagingMob(myId, mobId, dmgDealt, withItem, damagerDbId) {
     let rarityId = null;
 
     if (!preventPurchase) {
-        //api.log("---");
-        //api.log(mob);
         outer:
         for (let rarity of brainrots) {
             for (let e of rarity.ents) {
-                //api.log(e);
                 if (e.cid == mob.brainrotData.cid && e.blockName == mob.brainrotData.blockName) {
                     rarityId = rarity.cid;
                     break outer;
@@ -556,7 +584,6 @@ function onWorldAttemptDespawnMob(mobId) {
     if (!loaded) { return "preventDespawn"; }
 
     let type = api.getEntityType(mobId);
-    //api.log(`Attempted to despawn ${type}`);
     for (let m of mobs) {
         if (m.id == mobId) { return "preventDespawn"; }
     }
@@ -569,30 +596,9 @@ function onPlayerDropItem(myId, x, y, z, itemName, itemAmount, fromIdx) {
     if (!admin.includes(username)) { return "preventDrop"; }
 }
 
-toload = [
-    [1000, 1000, 1000],
-    [1000, 1000, 999],
-    [1000, 1000, 998],
-    [1000, 1000, 997],
-];
-
-loadedcallbacks = ["tick", "onPlayerJoin"];
-
-const loadwait = 12;
-const loaddelay = 25;
-const showlogs = false;
-
-let starttime = null;
-let warmUp = api.getBlock(...toload[0]);
-
-let loaded = false;
-let startloading = false;
-let shouldLoad = true;
-
-let ticknum = 0;
-let ticks = 0;
-
 function onPlayerJoin(myId) {
+    defineVariables();
+
     let username = api.getEntityName(myId);
 
     if (!admin.includes(username)) { api.matchmakePlayer(myId, "classic_survival", "banish_player"); }
