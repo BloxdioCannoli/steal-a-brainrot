@@ -308,7 +308,6 @@ function getFreeBase() {
 }
 
 function updateBaseNametag(ownerId, onJoin = false) {
-    //api.log(`called updateBaseNametag`)
     let username = api.getEntityName(ownerId);
     let base = bases[ownerId];
 
@@ -330,22 +329,27 @@ function updateBaseNametag(ownerId, onJoin = false) {
 }
 
 function updateBrainrots(myId, spawnAt) {
+    globalThis.shouldUpdatePlayerBrainrots[myId]=true;
+}
+
+function updateBrainrotsVisual(myId, spawnAt) {
     stealable[myId] = [];
 
+    try {
+        if (!globalThis.savedPlayerMobNum) { globalThis.savedPlayerMobNum = 0; }
+    } catch { globalThis.savedPlayerMobNum = 0; }
     let brainrots = getBrainrots(myId);
-    for (let bNum in brainrots) {
+    for (let bNum = globalThis.savedPlayerMobNum; bNum <= brainrots.length; bNum++) {
+        globalThis.savedPlayerMobNum = bNum;
+        if (api.isNearInterrupt()) { return; }
         let b = brainrots[bNum];
         if (!b) { continue; }
 
 
         let [x, y, z] = (spawnAt[bNum] ?? [0, 0, 0]);
         y -= 0.5;
-
-        //api.log(`Spawning at ${[x, y, z]}`)
-
-        //api.log(b.id);
+        
         let brainrotConfig = getBrainrotById(b.id);
-        //api.log(brainrotConfig);
 
         let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
             size: brainrotConfig.size,
@@ -359,7 +363,7 @@ function updateBrainrots(myId, spawnAt) {
         let mob = api.attemptSpawnMob("Draugr Zombie", 0, 0, 0);
         let rarityName = b.rarityName;
         let level = b.level;
-        //api.log(`Called updateBrainrots`)
+
         api.setTargetedPlayerSettingForEveryone(mesh, "nameTagInfo", {
             content: [
                 { str: `${brainrotConfig.displayName ?? (brainrotConfig.blockName.replace(" Statue", ""))}`, style: { fontSize: "65px", color: rarityColors[rarityName] } },
@@ -373,9 +377,11 @@ function updateBrainrots(myId, spawnAt) {
         playerBrainrotIds[myId][mob] = { idx: bNum };
         stealable[myId].push(mob);
         toHide.push({ id: mob, count: 10, pos: [x, y, z] });
-        //api.log(`Pushed to toHide`);
+
         api.setMobAiState(mob, "disabled", null);
     }
+    globalThis.savedPlayerMobNum = 0;
+    globalThis.shouldUpdatePlayerBrainrots[myId]=false;
 }
 
 function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 250) {
@@ -390,7 +396,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
     });
     //api.setPosition(mesh, x, y, z);
     api.setPosition(mesh, 0, 0, 0);
-    
+
     api.applyEffect(mob, "Slowness", null, { inbuiltLevel: 1 });
 
     if (mesh) {
@@ -405,17 +411,10 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
         });
         brainrotData.rarityName = rarityName;
         mobs.push({ rarityName: rarityName, id: mob, mesh: mesh, type: "mesh", invisibleCount: 5, offset: brainrotData.offset, brainrotData: brainrotData });
-
-        //api.log(`Added to mobs array.`)
-        //api.log(mobs[mobs.length - 1]);
     } else { return false; }
-
-    //rarityParticles(rarityName);
 
     api.setPosition(mesh, [0, 0, 0]);
     api.setPosition(mob, [0, 0, 0]);
-
-    //api.log(`Created brainrot mesh`)
 
     return true;
 }
@@ -423,9 +422,7 @@ function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 
 function getBrainrotById(id = []) {
     let brainrotConfig = null;
     for (let b of brainrots) {
-        //api.log(id[0])
         if (b.cid == id[0]) {
-            //api.log(`Rarity match: ${b.cid}`)
             for (let e of b.ents) {
                 if (e.cid == id[1]) {
                     brainrotConfig = e;
