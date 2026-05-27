@@ -89,13 +89,26 @@ function attemptReturn(myId) { // myId = thief id
 }
 
 function resetBrainrotsLastClaimedAt(myId) {
+    try {
+        if (!globalThis.savedPlayerMobNum2) { globalThis.savedPlayerMobNum2 = {}; }
+    } catch { globalThis.savedPlayerMobNum2 = {}; }
+    try {
+        if (!globalThis.savedPlayerMobNum2[myId]) { globalThis.savedPlayerMobNum2[myId] = 0; }
+    } catch { globalThis.savedPlayerMobNum2[myId] = 0; }
+
     let brainrots = getBrainrots(myId);
-    for (let dbIdx in brainrots) {
+    for (let dbIdx = globalThis.savedPlayerMobNum2[myId]; dbIdx <= brainrots.length; dbIdx++) {
+        globalThis.savedPlayerMobNum2[myId]++;
+        if (api.isNearInterrupt()) { return false; }
+
         let b = brainrots[dbIdx];
         if (b) {
             setBrainrotValue(myId, dbIdx, "lastClaimedAt", minifyTime(api.now()));
         }
     }
+
+    globalThis.savedPlayerMobNum2[myId] = 0;
+    return true;
 }
 
 function resetToStarter(myId) {
@@ -204,12 +217,13 @@ function runPlayerJoin(myId) {
 
     resetLaserWalkthroughs(myId);
 
-    resetBrainrotsLastClaimedAt(myId);
+    if (!resetBrainrotsLastClaimedAt(myId)) { return; }
 
     let username = api.getEntityName(myId);
 
     if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
 
+    if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 0) {// *****-side setup
         //api.setPosition(myId, bases[myId].spawnPos); // <= uncomment on publish
 
@@ -285,7 +299,9 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
+    api.log(`Finished 1`);
 
+    if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 1) { // database and object setup
         let coins = api.getPlayerDbValue(myId, "coins");
         if (!coins) {
@@ -297,14 +313,18 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
+    api.log(`Finished 2`);
 
+    if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 2) { // brainrot init
         attemptInitBrainrotDb(myId);
 
         playerJoinLevel[myId]++;
     }
+    api.log(`Finished 3`);
 
 
+    if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 3) { // base init 1
         let freeBaseIdx = getFreeBase();
         baseNum[myId] = freeBaseIdx;
@@ -313,7 +333,9 @@ function runPlayerJoin(myId) {
         playerJoinLevel[myId]++;
     }
     let base = bases[myId];
+    api.log(`Finished 4`);
 
+    if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 4) { // *****-side base setup
         let lsp = base.laserStartPos;
         api.setWalkThroughRect(myId, [lsp[0], lsp[1] + 3, lsp[2]], [lsp[0], lsp[1] + 1, lsp[2] - 1], 1);
@@ -326,9 +348,10 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
+    api.log(`Finished 5`);
 
+    if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 5) { // base init 2
-        updateBrainrots(myId, base.brainrotPlatforms);
         nametag = api.attemptCreateMeshEntity("BloxdBlock", {
             blockName: "Invisible Solid",
             size: 1,
@@ -340,10 +363,13 @@ function runPlayerJoin(myId) {
 
         createLockNotif(myId, base.lockPos);
 
+        updateBrainrots(myId, base.brainrotPlatforms);
         playerJoinLevel[myId]++;
     }
+    api.log(`Finished 6`);
 
     delete shouldRunPlayerJoin[myId];
+    return true;
 }
 
 function getHeldActionType(myId) {
