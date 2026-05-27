@@ -1,4 +1,4 @@
-//update: aaaaaaaa
+//update: aaaa
 
 /*
 === TODO ===
@@ -24,6 +24,8 @@ function defineVariables() {
     mobSpawnTime = {};
 
     globalThis.shouldUpdatePlayerBrainrots = {};
+    globalThis.savedPlayerMobNum = {};
+    globalThis.savedPlayerMobNum2 = {};
 
     claimingStart = 1779157161692;
 
@@ -297,15 +299,26 @@ function onPlayerChangeBlock(myId, x, y, z, fromBlock, toBlock, droppedItem, fro
 function onPlayerDamagingOtherPlayer(myId, damagedPlayer, damageDealt, withItem, bodyPartHit, myDbId) {
     if (blockIfUsingPrestigeItem(myId)) { return "preventDamage"; }
 
+    let actionType = getHeldActionType(myId);
+
     let item = api.getHeldItem(myId);
     if (!canHit(myId)) {
         api.sendFlyingMiddleMessage(myId, [{ str: "Hit cooldown active!" }], 10, 1000);
         return "preventDamage";
     } else {
-        if (item?.name == "Stick") {
+        if (actionType == "bat") {
             api.setHealth(damagedPlayer, 100);
             applyHitCooldown(myId);
             attemptReturn(damagedPlayer);
+        } else if (actionType == "galaxybat") {
+            if (!api.hasEffect(myId, "galaxybatcooldown")) {
+                api.setHealth(damagedPlayer, 100);
+                applyHitCooldown(myId, "galaxybat");
+                attemptReturn(damagedPlayer);
+                api.applyEffect(myId, "galaxybatcooldown", 25000, { icon: "Stick", displayName: "Galaxy Bat Cooldown" });
+            } else {
+                return "preventDamage";
+            }
         } else {
             return "preventDamage";
         }
@@ -529,6 +542,12 @@ function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
                 prestigeItemActivatedThisTick[myId] = true;
             }
         }
+    } else if (getHeldActionType(myId) == "freezeray") {
+
+    } else if (getHeldActionType(myId) == "swapcrystal") {
+
+    } else if (getHeldActionType(myId) == "flashbang") {
+
     }
 
     if (!prestigeItemActivatedThisTick[myId]) { if (blockIfUsingPrestigeItem(myId)) { return; } }
