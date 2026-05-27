@@ -164,7 +164,7 @@ function tickHidden() {
                     delete mobSpawnTime[m];
                     try {
                         api.deleteMeshEntity(mesh);
-                    } catch (err) { 
+                    } catch (err) {
                     }
                     try {
                         api.despawnMob(m);
@@ -226,7 +226,7 @@ function tickHidden() {
         let base = bases[pId];
 
         if (globalThis.shouldUpdatePlayerBrainrots[pId] && base) {
-            updateBrainrotsVisual(pId, base.brainrotPlatforms);
+            if (!updateBrainrotsVisual(pId, base.brainrotPlatforms)) { return; }
         }
 
         let exists = true;
@@ -237,7 +237,7 @@ function tickHidden() {
         } catch { exists = false; }
         if (!exists) { return; }
 
-        if (shouldRunPlayerJoin[pId]) { runPlayerJoin(pId); }
+        if (shouldRunPlayerJoin[pId]) { if (!runPlayerJoin(pId)) {return} }
 
         let coins = api.getPlayerDbValue(pId, "coins");
 
