@@ -1,7 +1,15 @@
+function randomPlayerInPrestigeItemRadius(myId) {
+    let players = getPlayersInPrestigeItemRadius(myId);
+    if (!players || !(players.length >= 1)) { return false; }
+
+    let player = players[random(0, players.length - 1)];
+    return player;
+}
+
 function getPlayersInPrestigeItemRadius(myId) {
     let pos = api.getPosition(myId);
     let [x, y, z] = pos;
-    let players = api.getEntitiesInRect([x + 2.5, y + 1, z + 2.5], [x - 2.5, y - 1, z - 2.5]);
+    let players = api.getEntitiesInRect([x + 2.5, y + 2, z + 2.5], [x - 2.5, y - 2, z - 2.5]);
     players.splice(players.indexOf(myId), 1);
 
     return players;
@@ -84,8 +92,12 @@ function refreshBrainrotRender(myId) {
 function canHit(myId) {
     return !api.hasEffect(myId, "Hit cooldown");
 }
-function applyHitCooldown(myId) {
-    api.applyEffect(myId, "Hit cooldown", 1000, { displayName: "Hit cooldown", icon: "Fist" });
+function applyHitCooldown(myId, type = "bat") {
+    if (type == "bat") {
+        api.applyEffect(myId, "Hit cooldown", 1000, { displayName: "Hit cooldown", icon: "Fist" });
+    } else if (type == "galaxybat") {
+        api.applyEffect(myId, "Hit cooldown", 1500, { displayName: "Hit cooldown", icon: "Fist" });
+    }
 }
 function addBrainrot(myId, content) {
     let brainrots = getBrainrots(myId);
@@ -329,26 +341,30 @@ function updateBaseNametag(ownerId, onJoin = false) {
 }
 
 function updateBrainrots(myId, spawnAt) {
-    globalThis.shouldUpdatePlayerBrainrots[myId]=true;
+    globalThis.shouldUpdatePlayerBrainrots[myId] = true;
 }
 
 function updateBrainrotsVisual(myId, spawnAt) {
     stealable[myId] = [];
 
     try {
-        if (!globalThis.savedPlayerMobNum) { globalThis.savedPlayerMobNum = 0; }
-    } catch { globalThis.savedPlayerMobNum = 0; }
+        if (!globalThis.savedPlayerMobNum) { globalThis.savedPlayerMobNum = {}; }
+    } catch { globalThis.savedPlayerMobNum = {}; }
+    try {
+        if (!globalThis.savedPlayerMobNum[myId]) { globalThis.savedPlayerMobNum[myId] = 0; }
+    } catch { globalThis.savedPlayerMobNum[myId] = 0; }
+    
     let brainrots = getBrainrots(myId);
-    for (let bNum = globalThis.savedPlayerMobNum; bNum <= brainrots.length; bNum++) {
-        globalThis.savedPlayerMobNum = bNum;
-        if (api.isNearInterrupt()) { return; }
+
+    for (let bNum = globalThis.savedPlayerMobNum[myId]; bNum <= brainrots.length; bNum++) {        
+        if (api.isNearInterrupt()) { return false; }
         let b = brainrots[bNum];
         if (!b) { continue; }
 
 
         let [x, y, z] = (spawnAt[bNum] ?? [0, 0, 0]);
         y -= 0.5;
-        
+
         let brainrotConfig = getBrainrotById(b.id);
 
         let mesh = api.attemptCreateMeshEntity("BloxdBlock", {
@@ -379,9 +395,14 @@ function updateBrainrotsVisual(myId, spawnAt) {
         toHide.push({ id: mob, count: 10, pos: [x, y, z] });
 
         api.setMobAiState(mob, "disabled", null);
+
+        globalThis.savedPlayerMobNum = bNum;
     }
-    globalThis.savedPlayerMobNum = 0;
-    globalThis.shouldUpdatePlayerBrainrots[myId]=false;
+    globalThis.savedPlayerMobNum[myId] = 0;
+    globalThis.shouldUpdatePlayerBrainrots[myId] = false;
+
+    api.log(`Finished in updateBrainrotsVisual`);
+    return true;
 }
 
 function spawnBrainrotEntity(mob, brainrotData, rarityName, x, y, z, hideDist = 250) {
