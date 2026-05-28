@@ -89,6 +89,7 @@ function attemptReturn(myId) { // myId = thief id
 }
 
 function resetBrainrotsLastClaimedAt(myId) {
+    api.log("---");
     try {
         if (!globalThis.savedPlayerMobNum2) { globalThis.savedPlayerMobNum2 = {}; }
     } catch { globalThis.savedPlayerMobNum2 = {}; }
@@ -97,15 +98,17 @@ function resetBrainrotsLastClaimedAt(myId) {
     } catch { globalThis.savedPlayerMobNum2[myId] = 0; }
 
     let brainrots = getBrainrots(myId);
-    for (let dbIdx = globalThis.savedPlayerMobNum2[myId]; dbIdx <= brainrots.length; dbIdx++) {
+    for (let dbIdx = globalThis.savedPlayerMobNum2[myId]; dbIdx < brainrots.length; dbIdx++) {
         globalThis.savedPlayerMobNum2[myId]++;
-        if (api.isNearInterrupt()) { return false; }
+        log(`Current count: ${globalThis.savedPlayerMobNum2[myId]}/${brainrots.length}`);
+        if (api.isNearInterrupt()) { log("Near interrupt, returning"); return false; }
 
         let b = brainrots[dbIdx];
         if (b) {
             setBrainrotValue(myId, dbIdx, "lastClaimedAt", minifyTime(api.now()));
         }
     }
+    log(`Finished`);
 
     globalThis.savedPlayerMobNum2[myId] = 0;
     return true;
@@ -209,19 +212,24 @@ function rarityParticles(rarity) {
 }
 
 function runPlayerJoin(myId) {
-    if (!playerJoinLevel[myId]) { playerJoinLevel[myId] = 0; }
-
-    api.setCanChangeBlockType(myId, "Fireball Block");
-
-    api.setItemStat(myId, "Fireball Block", "ttb", 1000);
-
-    resetLaserWalkthroughs(myId);
-
-    if (!resetBrainrotsLastClaimedAt(myId)) { return; }
-
+    log(`=====`);
+    if (!playerJoinLevel[myId] && playerJoinLevel[myId] != 0) { playerJoinLevel[myId] = -1; }
     let username = api.getEntityName(myId);
 
-    if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
+    if (playerJoinLevel[myId] <= -1) {
+        api.setCanChangeBlockType(myId, "Fireball Block");
+
+        api.setItemStat(myId, "Fireball Block", "ttb", 1000);
+
+        log(`Before lasers`);
+        resetLaserWalkthroughs(myId);
+
+        if (!resetBrainrotsLastClaimedAt(myId)) { log(`Returned after laser reset fail`); return; }
+        log(`Ran lasers`);
+
+        if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
+        playerJoinLevel[myId]++;
+    }
 
     if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 0) {// *****-side setup
@@ -299,6 +307,7 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
+
     api.log(`Finished 1`);
 
     if (api.isNearInterrupt()) { return false; }
