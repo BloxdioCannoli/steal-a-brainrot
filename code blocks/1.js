@@ -401,7 +401,6 @@ function updateBrainrotsVisual(myId, spawnAt) {
     globalThis.savedPlayerMobNum[myId] = 0;
     globalThis.shouldUpdatePlayerBrainrots[myId] = false;
 
-    api.log(`Finished in updateBrainrotsVisual`);
     return true;
 }
 
@@ -464,7 +463,7 @@ function clearRenderedBrainrots(myId) {
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
         let name = api.getEntityName(ent);
-        //log(`${name}`);
+
         let protectedMesh = ["lockbase", "laser"];
         if (api.getEntityType(ent) == "Mesh" && !name.includes("'") && !protectedMesh.includes(name)) {
             api.deleteMeshEntity(ent);
@@ -482,7 +481,7 @@ function clearEntireRenderedBase(myId) {
     let [x2, y2, z2] = base.borders[1];
     for (let ent of api.getEntitiesInRect([x1, y1, z1], [x2, y2, z2])) {
         let name = api.getEntityName(ent);
-        //log(`${name}`);
+
         if (api.getEntityType(ent) == "Mesh") {
             api.deleteMeshEntity(ent);
         }
