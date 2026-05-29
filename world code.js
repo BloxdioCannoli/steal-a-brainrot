@@ -1,4 +1,4 @@
-//update: aaaaaaaaaaaaaaaa
+//update: aaaaa
 
 /*
 === TODO ===
@@ -510,7 +510,7 @@ let prestigeItemActivatedThisTick = {};
 let prestigeItemUsed = {};
 function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
     prestigeItemActivatedThisTick[myId] = null;
-    if (!loaded) { return; }
+    if (!loaded && !shouldRunPlayerJoin[myId]) { return; }
 
     if (getHeldActionType(myId) == "67saddle") {
         if (api.hasEffect(myId, "riding67")) {
@@ -552,7 +552,11 @@ function onPlayerClick(myId, rc, x, y, z, block, targetEId) {
 
     if (!prestigeItemActivatedThisTick[myId]) { if (blockIfUsingPrestigeItem(myId)) { return; } }
 
-    let [lx, ly, lz] = bases[myId].lockPos;
+    let base = bases[myId];
+    if (!base) { return; }
+    let lockPos = base.lockPos;
+    if (!lockPos) { return; }
+    let [lx, ly, lz] = base.lockPos;
 
     let held = api.getHeldItem(myId);
 
@@ -616,6 +620,7 @@ function onPlayerDropItem(myId, x, y, z, itemName, itemAmount, fromIdx) {
 }
 
 function onPlayerJoin(myId) {
+    displayLoading(myId);
     defineVariables();
 
     let username = api.getEntityName(myId);
@@ -744,10 +749,31 @@ function tick() {
             }
         }
     } else {
-        /*try {*/
-        tickHidden();
-        /*} catch(err) {
-            api.log(err);
-        }*/
+        try {
+            tickHidden();
+        } catch (err) {
+            //api.log(err);
+        }
     }
+}
+
+function displayLoading(myId) {
+    updateSidebar[myId] = false;
+    api.setClientOptions(myId, {
+        "cameraTint": [0, 0, 0, 1],
+        "RightInfoText": [],
+        "crosshairText": [{ icon: "fa-solid fa-sync fa-spin", style: { fontSize: "50px", color: "#cef3ff" } }, { str: " Loading", style: { fontSize: "50px", color: "#cef3ff" } }],
+        "forcedCameraDirection": [0, 0, 0],
+    });
+    api.applyEffect(myId, "Frozen", 0, {});
+}
+
+function removeLoading(myId) {
+    api.setClientOptions(myId, {
+        "cameraTint": [0, 0, 0, 0],
+        "crosshairText": [],
+        "forcedCameraDirection": null,
+    });
+    updateSidebar[myId] = true;
+    api.removeEffect(myId, "Frozen");
 }
