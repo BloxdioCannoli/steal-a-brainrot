@@ -89,7 +89,6 @@ function attemptReturn(myId) { // myId = thief id
 }
 
 function resetBrainrotsLastClaimedAt(myId) {
-    api.log("---");
     try {
         if (!globalThis.savedPlayerMobNum2) { globalThis.savedPlayerMobNum2 = {}; }
     } catch { globalThis.savedPlayerMobNum2 = {}; }
@@ -100,15 +99,13 @@ function resetBrainrotsLastClaimedAt(myId) {
     let brainrots = getBrainrots(myId);
     for (let dbIdx = globalThis.savedPlayerMobNum2[myId]; dbIdx < brainrots.length; dbIdx++) {
         globalThis.savedPlayerMobNum2[myId]++;
-        log(`Current count: ${globalThis.savedPlayerMobNum2[myId]}/${brainrots.length}`);
-        if (api.isNearInterrupt()) { log("Near interrupt, returning"); return false; }
+        if (api.isNearInterrupt()) { return false; }
 
         let b = brainrots[dbIdx];
         if (b) {
             setBrainrotValue(myId, dbIdx, "lastClaimedAt", minifyTime(api.now()));
         }
     }
-    log(`Finished`);
 
     globalThis.savedPlayerMobNum2[myId] = 0;
     return true;
@@ -212,7 +209,6 @@ function rarityParticles(rarity) {
 }
 
 function runPlayerJoin(myId) {
-    log(`=====`);
     if (!playerJoinLevel[myId] && playerJoinLevel[myId] != 0) { playerJoinLevel[myId] = -1; }
     let username = api.getEntityName(myId);
 
@@ -221,11 +217,9 @@ function runPlayerJoin(myId) {
 
         api.setItemStat(myId, "Fireball Block", "ttb", 1000);
 
-        log(`Before lasers`);
         resetLaserWalkthroughs(myId);
 
-        if (!resetBrainrotsLastClaimedAt(myId)) { log(`Returned after laser reset fail`); return; }
-        log(`Ran lasers`);
+        if (!resetBrainrotsLastClaimedAt(myId)) { return; }
 
         if (!hasSetMax) { api.setMaxPlayers(8, 8); hasSetMax = true; }
         playerJoinLevel[myId]++;
@@ -251,6 +245,8 @@ function runPlayerJoin(myId) {
                 },
             },
             cantChangeError: [],
+            maxAuraLevel: 0,
+            maxShield: 0,
 
         });
 
@@ -262,7 +258,6 @@ function runPlayerJoin(myId) {
             api.setClientOptions(myId, {
                 "skyBox": {
                     type: "earth",
-                    //vertexTint: [0, 0, 0]
                 }
             });
         }
@@ -278,7 +273,7 @@ function runPlayerJoin(myId) {
                 canChange: true,
                 useFullInventory: true,
                 inventoryItemsMoveable: true,
-                maxHealth: null,
+                maxHealth: 100,
             });
             api.setHealth(myId, null);
         } else {
@@ -308,8 +303,6 @@ function runPlayerJoin(myId) {
         playerJoinLevel[myId]++;
     }
 
-    api.log(`Finished 1`);
-
     if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 1) { // database and object setup
         let coins = api.getPlayerDbValue(myId, "coins");
@@ -322,7 +315,6 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
-    api.log(`Finished 2`);
 
     if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 2) { // brainrot init
@@ -330,7 +322,6 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
-    api.log(`Finished 3`);
 
 
     if (api.isNearInterrupt()) { return false; }
@@ -342,7 +333,6 @@ function runPlayerJoin(myId) {
         playerJoinLevel[myId]++;
     }
     let base = bases[myId];
-    api.log(`Finished 4`);
 
     if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 4) { // *****-side base setup
@@ -357,7 +347,6 @@ function runPlayerJoin(myId) {
 
         playerJoinLevel[myId]++;
     }
-    api.log(`Finished 5`);
 
     if (api.isNearInterrupt()) { return false; }
     if (playerJoinLevel[myId] <= 5) { // base init 2
@@ -375,7 +364,8 @@ function runPlayerJoin(myId) {
         updateBrainrots(myId, base.brainrotPlatforms);
         playerJoinLevel[myId]++;
     }
-    api.log(`Finished 6`);
+
+    removeLoading(myId);
 
     delete shouldRunPlayerJoin[myId];
     return true;
